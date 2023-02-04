@@ -1,0 +1,10 @@
+[default]
+src = 'src'
+out = 'out'
+libs = ['lib']
+remappings = [
+    '@thirdweb-dev/=node_modules/@thirdweb-dev/',
+]
+
+
+# See more config options https://github.com/foundry-rs/foundry/tree/master/config
