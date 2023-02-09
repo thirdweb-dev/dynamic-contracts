@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache 2.0
-// OpenZeppelin Contracts (last updated v4.7.0) (utils/structs/EnumerableSet.sol)
+// @author: thirdweb (https://github.com/thirdweb-dev/plugin-pattern)
 
 pragma solidity ^0.8.0;
 
