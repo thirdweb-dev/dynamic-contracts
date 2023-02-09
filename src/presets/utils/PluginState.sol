@@ -2,17 +2,17 @@
 pragma solidity ^0.8.0;
 
 // Interface
-import "../interface/IPlugin.sol";
+import "../../interface/IPlugin.sol";
 
 // Extensions
-import "@thirdweb-dev/contracts/lib/TWStringSet.sol";
+import "./StringSet.sol";
 
 library PluginStateStorage {
     bytes32 public constant PLUGIN_STATE_STORAGE_POSITION = keccak256("plugin.state.storage");
 
     struct Data {
         /// @dev Set of names of all plugins stored.
-        TWStringSet.Set pluginNames;
+        StringSet.Set pluginNames;
         /// @dev Mapping from plugin name => `Plugin` i.e. plugin metadata and functions.
         mapping(string => IPlugin.Plugin) plugins;
         /// @dev Mapping from function selector => plugin metadata of the plugin the function belongs to.
@@ -28,7 +28,7 @@ library PluginStateStorage {
 }
 
 contract PluginState is IPlugin {
-    using TWStringSet for TWStringSet.Set;
+    using StringSet for StringSet.Set;
 
     /*///////////////////////////////////////////////////////////////
                         Internal functions
@@ -113,7 +113,7 @@ contract PluginState is IPlugin {
     function _removePlugin(string memory _pluginName) internal {
         PluginStateStorage.Data storage data = PluginStateStorage.pluginStateStorage();
 
-        require(data.pluginNames.remove(_pluginName), "PluginState: plugin does not exists.");
+        require(data.pluginNames.remove(_pluginName), "PluginState: plugin does not exist.");
 
         address implementation = data.plugins[_pluginName].metadata.implementation;
         PluginFunction[] memory pluginFunctions = data.plugins[_pluginName].functions;

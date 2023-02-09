@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import "./IPluginMap.sol";
+import "./IDefaultPluginSet.sol";
 
-interface ITWRouter is IPluginMap {
+interface IBaseRouter is IDefaultPluginSet {
     /*///////////////////////////////////////////////////////////////
                         External functions
     //////////////////////////////////////////////////////////////*/
 
     /// @dev Adds a new plugin to the router.
-    function addPlugin(string memory pluginName) external;
+    function addPlugin(Plugin memory plugin) external;
 
     /// @dev Updates an existing plugin in the router, or overrides a default plugin.
-    function updatePlugin(string memory pluginName) external;
+    function updatePlugin(Plugin memory plugin) external;
 
     /// @dev Removes an existing plugin from the router.
     function removePlugin(string memory pluginName) external;

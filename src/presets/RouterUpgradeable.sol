@@ -3,16 +3,20 @@ pragma solidity ^0.8.0;
 
 import "./BaseRouter.sol";
 
-contract RouterImmutable is BaseRouter {
+contract RouterUpgradeable is BaseRouter {
     
-    constructor(Plugin[] memory _plugins) BaseRouter(_plugins) {}
+    address public deployer;
+
+    constructor(Plugin[] memory _plugins) BaseRouter(_plugins) {
+        deployer = msg.sender;
+    }
 
     /*///////////////////////////////////////////////////////////////
                             Overrides
     //////////////////////////////////////////////////////////////*/
 
     /// @dev Returns whether plug-in can be set in the given execution context.
-    function _canSetPlugin() internal pure override returns (bool) {
-        return false;
+    function _canSetPlugin() internal view virtual override returns (bool) {
+        return msg.sender == deployer;
     }
 }
