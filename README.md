@@ -1,6 +1,6 @@
-# Plugin Pattern: an open standard for dynamic smart contracts.
+# Plugin Pattern: an open standard for dynamic smart contracts
 
-Plugin pattern is a code / architectural pattern for writing dynamic smart contracts.
+Plugin pattern is an architectural pattern for writing dynamic smart contracts in Solidity. It provides guiderails for writing modular smart contracts, eliminating the restriction of contract size limit altogether. It also optionally enables writing dynamic contracts that can have functionality added, updated or removed over time.
 
 ## Background
 
@@ -53,8 +53,11 @@ To complement `Router`'s core functionality, the `BaseRouter` contract comes wit
 The `BaseRouter` contract prepares `Router` to have implementation smart contracts plugged in and out of it. We refer to each such implementation smart contract as a **_plugin_**.
 
 **Standard proxy pattern**
+
 ![standard-proxy](https://blog.thirdweb.com/content/images/size/w1600/2023/02/plugin-pattern-diag-1.png)
+
 **Plugin pattern**
+
 ![plugin-pattern](https://blog.thirdweb.com/content/images/size/w1600/2023/02/plugin-pattern-diag2.png)
 
 Essentially, `BaseRouter` maintains a `function_signature` → `implementation` mapping, and provides an API for updating that mapping. By updating the values stored in this map, functionality can be added to, removed from or updated in the smart contract!
@@ -141,13 +144,14 @@ contract RouterUpgradeable is BaseRouter {
     }
 }
 ```
-### Writing a smart contract plugin.
+### Writing a smart contract plugin
 
 A plugin smart contract is written like any other smart contract, expect that its state must be defined in a library and at a well defined storage location.
 
 This is to ensure that state defined in different plugins of the same `Router` don't affect the same storage locations by accident.
 
 **Regular smart contract**
+
 ```solidity
 contract Number {
 
@@ -164,6 +168,7 @@ contract Number {
 ```
 
 **Plugin smart contract**
+
 ```solidity
 
 library NumberStorage {
@@ -202,7 +207,7 @@ contract Number {
 
 The best, most open way to give feedback/suggestions for the plugin pattern is to open a github issue. 
 
-Additionally, since [thirdweb](https://thirdweb.com/) will be maintaining this repository, you can reach out to us at support@thirdweb.com.
+Additionally, since [thirdweb](https://thirdweb.com/) will be maintaining this repository, you can reach out to us at support@thirdweb.com or join our [discord](https://discord.gg/thirdweb).
 
 ## Authors
 * [thirdweb](https://github.com/thirdweb-dev)
