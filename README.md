@@ -157,7 +157,7 @@ contract Number {
 
     uint256 private number;
 
-    function setNumber(uitn256 _newNumber) external {
+    function setNumber(uint256 _newNumber) external {
         number = _newNumber;
     }
 
@@ -191,7 +191,7 @@ contract Number {
 
     uint256 private number;
 
-    function setNumber(uitn256 _newNumber) external {
+    function setNumber(uint256 _newNumber) external {
         NumberStorage.Data storage data = NumberStorage.numberStorage();
         data.number = _newNumber;
     }
