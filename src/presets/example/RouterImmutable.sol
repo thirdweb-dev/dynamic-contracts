@@ -3,7 +3,11 @@
 
 pragma solidity ^0.8.0;
 
-import "./BaseRouter.sol";
+import "../BaseRouter.sol";
+
+/**
+ *  This smart contract is an EXAMPLE, and is not meant for use in production.
+ */
 
 contract RouterImmutable is BaseRouter {
     
