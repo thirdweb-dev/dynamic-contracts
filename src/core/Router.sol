@@ -13,6 +13,8 @@ abstract contract Router is IRouter {
         _delegate(pluginAddress);
     }
 
+    receive() external payable virtual {}
+
     /// @dev delegateCalls an `implementation` smart contract.
     function _delegate(address implementation) internal virtual {
         assembly {
