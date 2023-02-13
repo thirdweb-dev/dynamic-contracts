@@ -1,6 +1,163 @@
 # Plugin Pattern: an open standard for dynamic smart contracts
 
-Plugin pattern is an architectural pattern for writing dynamic smart contracts in Solidity. It provides guiderails for writing modular smart contracts, eliminating the restriction of contract size limit altogether. It also optionally enables writing dynamic contracts that can have functionality added, updated or removed over time.
+Plugin pattern is an architectural pattern for writing dynamic smart contracts in Solidity. It provides guardrails for writing modular smart contracts, and eliminates the restriction of contract size limit altogether. It also optionally enables writing dynamic contracts that can have functionality added, updated or removed over time.
+
+## Usage
+
+Install the contents of this repo in your `forge` repository.
+```bash
+forge install https://github.com/thirdweb-dev/plugin-pattern
+```
+
+### Router.sol
+The core `Router` smart contract is available as an import. 
+```solidity
+import "lib/plugin-pattern/src/core/Router.sol";
+```
+
+To use the abstract contract `Router`, you must implement the `getImplementationForFunction` function.
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import "lib/plugin-pattern/src/core/Router.sol";
+
+/// Example usage of `src/core/Router.sol`
+
+contract SimpleRouter is Router {
+
+    mapping(bytes4 => address) public fnToImpl; 
+
+    fallback() external payable virtual {
+        address implementation = getImplementationForFunction(msg.sig);
+        delegateCall(implementation);
+    }
+
+    function getImplementationForFunction(bytes4 _functionSelector) 
+      public 
+      view 
+      virtual 
+      override
+      returns (address) 
+    {
+        return fnToImpl[_functionSelector];
+    }
+  
+    function setImplementationForFunction(bytes4 _functionSelector, address _impl) external {
+        fnToImpl[_functionSelector] = _impl;
+    }
+}
+```
+
+### BaseRouter.sol
+
+The `BaseRouter` smart contract builds on top of the core `Router` smart contract, and is available as an import.
+
+```solidity
+import "lib/plugin-pattern/src/presets/BaseRouter.sol";
+```
+The `BaseRouter` contract comes with an API to add/update/remove plugins from the contract. To use the abstract contract `BaseRouter`, you must specifcy the conditions under which plugins can be updated:
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import "lib/plugin-pattern/src/presets/BaseRouter.sol";
+
+/// Example usage of `src/presets/BaseRouter.sol`
+
+contract RouterUpgradeable is BaseRouter {
+    
+    address public deployer;
+
+    constructor(Plugin[] memory _plugins) BaseRouter(_plugins) {
+        deployer = msg.sender;
+    }
+
+    /// @dev Returns whether plug-in can be set in the given execution context.
+    function _canSetPlugin() internal view virtual override returns (bool) {
+        return msg.sender == deployer;
+    }
+}
+```
+### Writing a smart contract plugin
+
+Plugins are written using [storage structs](https://mirror.xyz/horsefacts.eth/EPB4o-eyDl0N8gu0gEz1uw7BTITheaZUqIAOEK1m-jE?utm_source=substack&utm_medium=email).
+
+That is, a plugin smart contract is written like any other smart contract, expect that its state must be defined in a struct, in a library and at a well defined storage location.
+
+This is to ensure that state defined in different plugins of the same `Router` don't affect the same storage locations by accident.
+
+**Regular smart contract**
+
+```solidity
+contract Number {
+
+    uint256 private number;
+
+    function setNumber(uint256 _newNumber) external {
+        number = _newNumber;
+    }
+
+    function getNumber() external view returns (uint256) {
+        return number;
+    }
+}
+```
+
+**Plugin smart contract**
+
+```solidity
+
+library NumberStorage {
+
+    bytes32 public constant NUMBER_STORAGE_POSITION = keccak256("number.storage");
+
+    struct Data {
+        uint256 number;
+    }
+
+    function numberStorage() internal pure returns (Data storage numberData) {
+        bytes32 position = NUMBER_STORAGE_POSITION;
+        assembly {
+            numberData.slot := position
+        }
+    }
+}
+
+contract Number {
+
+    uint256 private number;
+
+    function setNumber(uint256 _newNumber) external {
+        NumberStorage.Data storage data = NumberStorage.numberStorage();
+        data.number = _newNumber;
+    }
+
+    function getNumber() external view returns (uint256) {
+        NumberStorage.Data storage data = NumberStorage.numberStorage();
+        return data.number;
+    }
+}
+```
+
+### Deploying a plugin pattern smart contract setup
+
+Deploying a smart contract in the plugin pattern looks different from deploying a regular smart contract. 
+
+1. Deploy your router smart contract. This can be an implementation of the core `Router` or the preset `BaseRouter`.
+
+2. Deploy the relevant plugins i.e. implementation contracts your router will track and work with.
+   
+3. Let router know of all the relevant plugins and their respective functions. This may be at the router contract's construction time (e.g. see the constructor of `BaseRouter`) or after the router's deployment.
+
+
+The preset `BaseRouter` comes with an API to add / update / remove plugins in your router. 
+
+- `addPlugin`: function to add completely new plugins to your router
+- `updatePlugin`: function to update the implementation address, plugin metadata, or functions of an existing plugin in your router.
+- `removePlugin`: remove an existing plugin from your router.
 
 ## Background
 
@@ -70,137 +227,6 @@ The `BaseRouter` contract is an abstract contract, and expects its consumer to i
 
 ```solidity
 function _canSetPlugin() internal view virtual returns (bool);
-```
-
-## Usage
-
-Install the contents of this repo in your `forge` repository.
-```bash
-forge install https://github.com/thirdweb-dev/plugin-pattern
-```
-
-### Router.sol
-The core `Router` smart contract is available as an import. 
-```solidity
-import "lib/plugin-pattern/src/core/Router.sol";
-```
-
-To use the abstract contract `Router`, you must implement the `getImplementationForFunction` function.
-
-```solidity
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
-
-import "lib/plugin-pattern/src/core/Router.sol";
-
-contract SimpleRouter is Router {
-
-    mapping(bytes4 => address) public fnToImpl; 
-
-    fallback() external payable virtual {
-        address implementation = getImplementationForFunction(msg.sig);
-        delegateCall(implementation);
-    }
-
-    function getImplementationForFunction(bytes4 _functionSelector) 
-      public 
-      view 
-      virtual 
-      override
-      returns (address) 
-    {
-        return fnToImpl[_functionSelector];
-    }
-  
-    function setImplementationForFunction(bytes4 _functionSelector, address _impl) external {
-        fnToImpl[_functionSelector] = _impl;
-    }
-}
-```
-
-### BaseRouter.sol
-
-The `BaseRouter` smart contract builds on top of the core `Router` smart contract, and is available as an import.
-
-```solidity
-import "lib/plugin-pattern/src/presets/BaseRouter.sol";
-```
-The `BaseRouter` contract comes with an API to add/update/remove plugins from the contract. To use the abstract contract `BaseRouter`, you must specifcy the conditions under which plugins can be updated:
-
-```solidity
-import "lib/plugin-pattern/src/presets/BaseRouter.sol";
-
-contract RouterUpgradeable is BaseRouter {
-    
-    address public deployer;
-
-    constructor(Plugin[] memory _plugins) BaseRouter(_plugins) {
-        deployer = msg.sender;
-    }
-
-    /// @dev Returns whether plug-in can be set in the given execution context.
-    function _canSetPlugin() internal view virtual override returns (bool) {
-        return msg.sender == deployer;
-    }
-}
-```
-### Writing a smart contract plugin
-
-A plugin smart contract is written like any other smart contract, expect that its state must be defined in a library and at a well defined storage location.
-
-This is to ensure that state defined in different plugins of the same `Router` don't affect the same storage locations by accident.
-
-**Regular smart contract**
-
-```solidity
-contract Number {
-
-    uint256 private number;
-
-    function setNumber(uint256 _newNumber) external {
-        number = _newNumber;
-    }
-
-    function getNumber() external view returns (uint256) {
-        return number;
-    }
-}
-```
-
-**Plugin smart contract**
-
-```solidity
-
-library NumberStorage {
-
-    bytes32 public constant NUMBER_STORAGE_POSITION = keccak256("number.storage");
-
-    struct Data {
-        uint256 number;
-    }
-
-    function numberStorage() internal pure returns (Data storage numberData) {
-        bytes32 position = NUMBER_STORAGE_POSITION;
-        assembly {
-            numberData.slot := position
-        }
-    }
-}
-
-contract Number {
-
-    uint256 private number;
-
-    function setNumber(uint256 _newNumber) external {
-        NumberStorage.Data storage data = NumberStorage.numberStorage();
-        data.number = _newNumber;
-    }
-
-    function getNumber() external view returns (uint256) {
-        NumberStorage.Data storage data = NumberStorage.numberStorage();
-        return data.number;
-    }
-}
 ```
 
 ## Feedback
