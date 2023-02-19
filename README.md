@@ -1,4 +1,6 @@
-# `Router Pattern`: an open standard for dynamic smart contracts
+# `Router Pattern`
+
+### An open standard for dynamic smart contracts
 
 The Router pattern is an architectural pattern for writing dynamic smart contracts in Solidity. It provides guardrails for writing modular smart contracts, eliminating the restriction of contract size limit altogether. It also enables writing dynamic contracts that can have functionality added, updated or removed over time.
 
