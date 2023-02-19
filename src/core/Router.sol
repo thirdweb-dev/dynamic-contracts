@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// @author: thirdweb (https://github.com/thirdweb-dev/plugin-pattern)
+// @author: thirdweb (https://github.com/thirdweb-dev/router-pattern)
 
 pragma solidity ^0.8.0;
 
@@ -9,8 +9,8 @@ abstract contract Router is IRouter {
 
     fallback() external payable virtual {
     /// @dev delegate calls the appropriate implementation smart contract for a given function.
-        address pluginAddress = getImplementationForFunction(msg.sig);
-        _delegate(pluginAddress);
+        address implementation = getImplementationForFunction(msg.sig);
+        _delegate(implementation);
     }
 
     receive() external payable virtual {}

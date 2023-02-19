@@ -1,8 +1,8 @@
 {
-  "name": "@thirdweb-dev/plugin-pattern",
+  "name": "@thirdweb-dev/router-pattern",
   "version": "1.0.0",
   "main": "index.js",
-  "repository": "https://github.com/thirdweb-dev/plugin-pattern.git",
+  "repository": "https://github.com/thirdweb-dev/router-pattern.git",
   "author": "thirdweb <eng@thirdweb.com>",
   "license": "MIT",
   "dependencies": {},
