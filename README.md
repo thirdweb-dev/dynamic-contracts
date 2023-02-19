@@ -2,8 +2,6 @@
 
 The Router pattern is an architectural pattern for writing dynamic smart contracts in Solidity. It provides guardrails for writing modular smart contracts, and eliminates the restriction of contract size limit altogether. It also optionally enables writing dynamic contracts that can have functionality added, updated or removed over time.
 
-A `Router` contract can route function calls to any number of destination contracts, we call these destination contracts `Extensions`.
-
 ## Installation
 
 Install the contents of this repo in your `forge` repository.
@@ -12,11 +10,16 @@ Install the contents of this repo in your `forge` repository.
 forge install https://github.com/thirdweb-dev/router-pattern
 ```
 
+## Core concepts
+
+- A `Router` contract can route function calls to any number of destination contracts, we call these destination contracts `Extensions`.
+- `Extensions` can be added/updated/removed at any time, according to a predefined set of rules.
+
 ## Getting started
 
 ### 1. `Router` - the entrypoint contract
 
-The `BaseRouter` smart contract builds on top of the core `Router` smart contract, and is available as an import.
+The simplest way to write a `Router` contract is to extend the preset `BaseRouter` available in this repository.
 
 ```solidity
 import "lib/router-pattern/src/presets/BaseRouter.sol";
@@ -28,7 +31,7 @@ The `BaseRouter` contract comes with an API to add/update/remove extensions from
 function _canSetExtension() internal view virtual returns (bool);
 ```
 
-Here's a very simple example that allows the original contract deployer to add/update/remove extensions.
+Here's a very simple example that allows only the original contract deployer to add/update/remove `Extensions`.
 
 ```solidity
 // SPDX-License-Identifier: MIT
@@ -53,20 +56,16 @@ contract SimpleRouter is BaseRouter {
 }
 ```
 
-The main decision as a router contract author is to decide the permission model to add/update/remove extensions. This repository offers some presets for a few possible permission models:
+The main decision as a `Router` contract author is to decide the permission model to add/update/remove extensions. This repository offers some presets for a few possible permission models:
 
-- `RouterImmutable` is a preset you can use to create static contracts that cannot be updated or get new functionality. This still allows you to create modular contracts that go beyond the contract size limit, and guarantees that the original functionality cannot be altered.
 - `RouterUpgradeable` is a preset that allows the contract owner to add / upgrade / remove extensions.
+- `RouterImmutable` is a preset you can use to create static contracts that cannot be updated or get new functionality. This still allows you to create modular contracts that go beyond the contract size limit, but guarantees that the original functionality cannot be altered.
 
 Other permissions models might include an explicit list of extensions that can be added or removed for example. The implementation is up to the Router author.
 
 ### 2. `Extensions` - implementing routeable contracts
 
-Extension contracts are regular contracts, with the exception that it is highly recommended to write the state of the contract
-
-An `Extension` smart contract is written like any other smart contract, expect that its state must be defined in a `struct`, in a `library` and at a well defined storage location. This storage technique is known as [storage structs](https://mirror.xyz/horsefacts.eth/EPB4o-eyDl0N8gu0gEz1uw7BTITheaZUqIAOEK1m-jE?utm_source=substack&utm_medium=email).
-
-This is to ensure that state defined in an `Extension` of the same `Router` doesn't conflict with another `Extension` state at the same storage location by accident.
+An `Extension` contract is written like any other smart contract, expect that its state must be defined using a `struct` within a `library` and at a well defined storage location. This storage technique is known as [storage structs](https://mirror.xyz/horsefacts.eth/EPB4o-eyDl0N8gu0gEz1uw7BTITheaZUqIAOEK1m-jE?utm_source=substack&utm_medium=email). This is important to ensure that state defined in an `Extension` doesn't conflict with the state of another `Extension` of the same `Router` at the same storage location.
 
 Here's an example of a simple contract written as an `Extension` contract:
 
@@ -126,23 +125,35 @@ contract Number {
 
 The main difference is how the state is defined. While `Extension` requires a bit more boilerplate to setup, it is a one time cost that ensures the compatibility when using multiple `Extension` contracts with a single `Router`.
 
-### 3. Deploying a Router with Extensions
+### 3. Deploying a `Router`
 
 Deploying a contract in the router pattern looks a little different from deploying a regular contract.
 
-1. Deploy all your `Extension` contracts first. You only need to do this once per `Extension`. Deployed `Extension` can be re-used by many different `Router` contracts.
+1. Deploy all your `Extension` contracts first. You only need to do this once per `Extension`. Deployed `Extensions` can be re-used by many different `Router` contracts.
 
-2. Deploy your `Router` contract that implements `BaseRouter`, and pass your default `Extensions` via the constructor if any. You can pass any number of `Extension` contracts.
+2. Deploy your `Router` contract that implements `BaseRouter`.
 
-The preset `BaseRouter` comes with an API to add/update/remove extensions in your router.
+3. Optionally, you pass your default `Extensions` in the constructor of your `BaseRouter` at deploy time. This is a convenient way to bootstrap an `Router` with a set of default `Extension` in one transaction.
 
-- `addExtension`: function to add completely new `Extension` to your router
-- `updateExtension`: function to update the address, metadata, or functions of an existing `Extension` in your router.
-- `removeExtension`: remove an existing `Extension` from your router.
+### 4. Adding, removing or upgrading `Extensions` post deployment
 
-After deployment of your `Router`, you can add/update/remove `Extensions` at any time depending on your permission model.
+The preset `BaseRouter` comes with an API to add/update/remove `Extensions` at any time after deployment:
 
-## Background
+- `addExtension()`: function to add completely new `Extension` to your `Router`.
+- `updateExtension()`: function to update the address, metadata, or functions of an existing `Extension` in your `Router`.
+- `removeExtension()`: remove an existing `Extension` from your `Router`.
+
+The permission to modify `Extensions` is encoded in your `Router` and can have different conditions.
+
+With this pattern, your contract is now dynamically updeatable, with granular control.
+
+- Add entire new functionality to your contract post deployment
+- Remove functionality when it's not longer needed
+- Deploy security and bug fixes for a single function of your contract
+
+---
+
+## Going deeper - background and technical details
 
 In the standard proxy pattern for smart contracts, a proxy smart contract calls a _logic contract_ using `delegateCall`. This allows proxies to keep a persistent state (storage and balance) while the code is delegated to the logic contract. ([EIP-1967](https://eips.ethereum.org/EIPS/eip-1967))
 
@@ -186,7 +197,7 @@ abstract contract Router {
 
 This setup in the `Router` contract allows for different functions of the smart contract to be implemented in different logic contracts.
 
-### Smart contract _extensions_
+### Contract _extensions_
 
 By itself, the `Router` contract does not specify _how to store or fetch_ appropriate implementation addresses for incoming function calls.
 
