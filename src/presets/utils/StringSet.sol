@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache 2.0
-// @author: thirdweb (https://github.com/thirdweb-dev/plugin-pattern)
+// @author: thirdweb (https://github.com/thirdweb-dev/router-pattern)
 
 pragma solidity ^0.8.0;
 

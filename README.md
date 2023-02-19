@@ -46,7 +46,7 @@ contract SimpleRouter is BaseRouter {
         deployer = msg.sender;
     }
 
-    /// @dev Returns whether plug-in can be set in the given execution context.
+    /// @dev Returns whether extensions can be set in the given execution context.
     function _canSetExtension() internal view virtual override returns (bool) {
         return msg.sender == deployer;
     }
@@ -69,8 +69,6 @@ An `Extension` smart contract is written like any other smart contract, expect t
 This is to ensure that state defined in an `Extension` of the same `Router` doesn't conflict with another `Extension` state at the same storage location by accident.
 
 Here's an example of a simple contract written as an `Extension` contract:
-
-**Plugin smart contract**
 
 ```solidity
 

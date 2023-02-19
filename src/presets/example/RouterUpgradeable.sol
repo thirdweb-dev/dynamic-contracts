@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// @author: thirdweb (https://github.com/thirdweb-dev/plugin-pattern)
+// @author: thirdweb (https://github.com/thirdweb-dev/router-pattern)
 
 pragma solidity ^0.8.0;
 
@@ -12,7 +12,7 @@ contract RouterUpgradeable is BaseRouter {
     
     address public admin;
 
-    constructor(Plugin[] memory _plugins) BaseRouter(_plugins) {
+    constructor(Extension[] memory _extensions) BaseRouter(_extensions) {
         admin = msg.sender;
     }
 
@@ -26,8 +26,8 @@ contract RouterUpgradeable is BaseRouter {
                             Overrides
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Returns whether plug-in can be set in the given execution context.
-    function _canSetPlugin() internal view virtual override returns (bool) {
+    /// @dev Returns whether extensions can be set in the given execution context.
+    function _canSetExtension() internal view virtual override returns (bool) {
         return msg.sender == admin;
     }
 }
