@@ -208,15 +208,15 @@ The `BaseRouter` contract prepares `Router` to have implementation contracts plu
 
 **Standard proxy pattern**
 
-![standard-proxy](https://blog.thirdweb.com/content/images/size/w1600/2023/02/plugin-pattern-diag-1.png)
+![standard-proxy](/docs/img/proxy-diagram.png)
 
 **Router pattern**
 
-![router-pattern](https://blog.thirdweb.com/content/images/size/w1600/2023/02/plugin-pattern-diag2.png)
+![router-pattern](/docs/img/router-diagram.png)
 
 Essentially, `BaseRouter` maintains a `function_signature` → `implementation` mapping, and provides an API for updating that mapping. By updating the values stored in this map, functionality can be added to, removed from or updated in the smart contract!
 
-![updating-extensions](https://blog.thirdweb.com/content/images/size/w1600/2023/02/plugin-pattern-diag3.png)
+![updating-extensions](/docs/img/update-diagram.png)
 
 Here's a very simple implementation of a Router:
 
@@ -253,7 +253,7 @@ contract SimpleRouter is IRouter {
 }
 ```
 
-I slightly more optimized and practical version of a Router is the `BaseRouter`, provided in the repository. We recommend using that as a base for your own routers.
+A more optimized and practical version of a Router is the `BaseRouter`, provided in the repository. We recommend using that as a base for your own routers.
 
 ## Feedback
 
