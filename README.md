@@ -1,4 +1,6 @@
-# `Router Pattern`: an open standard for dynamic smart contracts
+# `Router Pattern`
+
+### An open standard for dynamic smart contracts
 
 The Router pattern is an architectural pattern for writing dynamic smart contracts in Solidity. It provides guardrails for writing modular smart contracts, eliminating the restriction of contract size limit altogether. It also enables writing dynamic contracts that can have functionality added, updated or removed over time.
 
@@ -22,7 +24,7 @@ forge install https://github.com/thirdweb-dev/router-pattern
 
 ### 1. `Router` - the entrypoint contract
 
-The simplest way to write a `Router` contract is to extend the preset `BaseRouter` available in this repository.
+The simplest way to write a `Router` contract is to extend the preset [`BaseRouter`](/src/presets/BaseRouter.sol) available in this repository.
 
 ```solidity
 import "lib/router-pattern/src/presets/BaseRouter.sol";
@@ -42,7 +44,7 @@ pragma solidity ^0.8.0;
 
 import "lib/router-pattern/src/presets/BaseRouter.sol";
 
-/// Example usage of `src/presets/BaseRouter.sol`
+/// Example usage of `BaseRouter`, for demonstration only
 
 contract SimpleRouter is BaseRouter {
 
@@ -61,14 +63,14 @@ contract SimpleRouter is BaseRouter {
 
 The main decision as a `Router` contract author is to decide the permission model to add/update/remove extensions. This repository offers some presets for a few possible permission models:
 
-- `RouterUpgradeable` is a preset that allows the contract owner to add / upgrade / remove extensions.
-- `RouterImmutable` is a preset you can use to create static contracts that cannot be updated or get new functionality. This still allows you to create modular contracts that go beyond the contract size limit, but guarantees that the original functionality cannot be altered.
+- [`RouterUpgradeable`](/src/presets/example/RouterUpgradeable.sol) is a preset that allows the contract owner to add / upgrade / remove extensions.
+- [`RouterImmutable`](/src/presets/example/RouterImmutable.sol) is a preset you can use to create static contracts that cannot be updated or get new functionality. This still allows you to create modular contracts that go beyond the contract size limit, but guarantees that the original functionality cannot be altered.
 
 Other permissions models might include an explicit list of extensions that can be added or removed for example. The implementation is up to the Router author.
 
 ### 2. `Extensions` - implementing routeable contracts
 
-An `Extension` contract is written like any other smart contract, expect that its state must be defined using a `struct` within a `library` and at a well defined storage location. This storage technique is known as [storage structs](https://mirror.xyz/horsefacts.eth/EPB4o-eyDl0N8gu0gEz1uw7BTITheaZUqIAOEK1m-jE?utm_source=substack&utm_medium=email). This is important to ensure that state defined in an `Extension` doesn't conflict with the state of another `Extension` of the same `Router` at the same storage location.
+An `Extension` contract is written like any other smart contract, expect that its state must be defined using a `struct` within a `library` and at a well defined storage location. This storage technique is known as [storage structs](https://mirror.xyz/horsefacts.eth/EPB4o-eyDl0N8gu0gEz1uw7BTITheaZUqIAOEK1m-jE). This is important to ensure that state defined in an `Extension` doesn't conflict with the state of another `Extension` of the same `Router` at the same storage location.
 
 Here's an example of a simple contract written as an `Extension` contract:
 
@@ -126,7 +128,7 @@ contract Number {
 }
 ```
 
-The main difference is how the state is defined. While `Extension` requires a bit more boilerplate to setup, it is a one time cost that ensures the compatibility when using multiple `Extension` contracts with a single `Router`.
+The main difference is how the state is defined. While an `Extension` written this way requires a bit more boilerplate to setup, it is a one time cost that ensures full modularity when using multiple `Extension` contracts with a single `Router`.
 
 ### 3. Deploying a `Router`
 
@@ -229,6 +231,17 @@ modifier onlyAdmin(address _asset) {
 ```
 
 Note that if we don't have a IPermission `Extension` added to our `Router`, this method will revert.
+
+### Upgrading `Extensions`
+
+Just like any upgradeable contract, there are limitations on how the data structure of the updated contract is modified. While the logic of a function can be updated safely, changing the data structure of a contract requires careful consideration.
+
+A good rule of thumb to follow is:
+
+- It is safe to append new fields to an existing data structure
+- It is _not_ safe to update the type or order of existing structs, deprecate and add new ones instead
+
+Refer to [this article](https://mirror.xyz/horsefacts.eth/EPB4o-eyDl0N8gu0gEz1uw7BTITheaZUqIAOEK1m-jE) for more information.
 
 ## Feedback
 
