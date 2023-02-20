@@ -1,6 +1,4 @@
-# `Router Pattern`
-
-### An open standard for dynamic smart contracts
+# `Router Pattern`: an open standard for dynamic smart contracts
 
 The Router pattern is an architectural pattern for writing dynamic smart contracts in Solidity. It provides guardrails for writing modular smart contracts, eliminating the restriction of contract size limit altogether. It also enables writing dynamic contracts that can have functionality added, updated or removed over time.
 
@@ -17,6 +15,8 @@ forge install https://github.com/thirdweb-dev/router-pattern
 - A `Router` contract can route function calls to any number of destination contracts
 - We call these destination contracts `Extensions`.
 - `Extensions` can be added/updated/removed at any time, according to a predefined set of rules.
+
+![router-pattern](/docs/img/router-diagram.png)
 
 ## Getting started
 
@@ -200,62 +200,35 @@ abstract contract Router {
 
 This setup in the `Router` contract allows for different functions of the smart contract to be implemented in different logic contracts.
 
-### Contract _extensions_
+### `Extensions` - Grouping logical functionality together
 
-By itself, the `Router` contract does not specify _how to store or fetch_ appropriate implementation addresses for incoming function calls.
+By itself, the core `Router` contract does not specify _how to store or fetch_ appropriate implementation addresses for incoming function calls.
 
-To complement `Router`'s core functionality, the `BaseRouter` contract comes with an opinionated API to manage what functions should be mapped to what implementations.
+While the Router pattern allows to point to a different contract for each function, in practice functions are usually groupped by functionality related to a shared state (a read and a set function for example).
 
-The `BaseRouter` contract prepares `Router` to have implementation contracts plugged in and out of it. We refer to each such implementation contract as an **_extension_**.
+To make the pattern more practical, we created a generic `BaseRouter` contract that makes it easy to have logical group of functions plugged in and out of it, each group of functions being implemented in a separate implementation contract. We refer to each such implementation contract as an **_extension_**.
 
-**Standard proxy pattern**
-
-![standard-proxy](/docs/img/proxy-diagram.png)
-
-**Router pattern**
-
-![router-pattern](/docs/img/router-diagram.png)
-
-Essentially, `BaseRouter` maintains a `function_signature` → `implementation` mapping, and provides an API for updating that mapping. By updating the values stored in this map, functionality can be added to, removed from or updated in the smart contract!
+`BaseRouter` maintains a `function_signature` → `implementation` mapping, and provides an API for updating that mapping. By updating the values stored in this map, functionality can be added to, removed from or updated in the smart contract.
 
 ![updating-extensions](/docs/img/update-diagram.png)
 
-Here's a very simple implementation of a Router:
+### `Extension` to `Extension` communication
+
+When splitting logic between multiple `Extensions` in a `Router`, one might want to access data from one `Extension` to another.
+
+A simple way to do this is by casting the current contract address as the `Extension` (ideally its interface) we're trying to call. This works from both a `Router` or any of its `Extensions`.
+
+Here's an example of accessing a IPermission `Extension` from another one:
 
 ```solidity
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
-
-import "lib/router-pattern/src/interces/IRouter.sol";
-
-/// Example usage of `src/core/IRouter.sol`
-
-contract SimpleRouter is IRouter {
-
-    mapping(bytes4 => address) public fnToImpl;
-
-    fallback() external payable virtual {
-        address implementation = getImplementationForFunction(msg.sig);
-        delegateCall(implementation);
-    }
-
-    function getImplementationForFunction(bytes4 _functionSelector)
-      public
-      view
-      virtual
-      override
-      returns (address)
-    {
-        return fnToImpl[_functionSelector];
-    }
-
-    function setImplementationForFunction(bytes4 _functionSelector, address _impl) external {
-        fnToImpl[_functionSelector] = _impl;
-    }
+/// in MyExtension.sol
+modifier onlyAdmin(address _asset) {
+  /// we access our IPermission extension by casting our own address
+  IPermissions(address(this)).hasAdminRole(msg.sender);
 }
 ```
 
-A more optimized and practical version of a Router is the `BaseRouter`, provided in the repository. We recommend using that as a base for your own routers.
+Note that if we don't have a IPermission `Extension` added to our `Router`, this method will revert.
 
 ## Feedback
 
