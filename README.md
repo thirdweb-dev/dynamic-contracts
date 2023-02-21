@@ -1,15 +1,20 @@
-# `Router Pattern`
+# Dynamic Contracts Standard
 
-### An open standard for dynamic smart contracts
+### Architectural pattern for writing dynamic smart contracts in Solidity
 
-The Router pattern is an architectural pattern for writing dynamic smart contracts in Solidity. It provides guardrails for writing modular smart contracts, eliminating the restriction of contract size limit altogether. It also enables writing dynamic contracts that can have functionality added, updated or removed over time.
+This repository provides core interfaces and preset implementations that:
+
+- Provide guardrails for writing dynamic contracts that can have functionality added, updated or removed over time
+- Enables scaling up contracts by eliminating the restriction of contract size limit altogether
+
+> This architecture builds upon the diamond pattern ([EIP-2535](https://eips.ethereum.org/EIPS/eip-2535)). We've taken inspiration from it, and boiled it down to its leanest, simplest form.
 
 ## Installation
 
 Install the contents of this repo in your `forge` repository.
 
 ```bash
-forge install https://github.com/thirdweb-dev/router-pattern
+forge install https://github.com/thirdweb-dev/dynamic-contracts
 ```
 
 ## Core concepts
@@ -27,7 +32,7 @@ forge install https://github.com/thirdweb-dev/router-pattern
 The simplest way to write a `Router` contract is to extend the preset [`BaseRouter`](/src/presets/BaseRouter.sol) available in this repository.
 
 ```solidity
-import "lib/router-pattern/src/presets/BaseRouter.sol";
+import "lib/dynamic-contracts/src/presets/BaseRouter.sol";
 ```
 
 The `BaseRouter` contract comes with an API to add/update/remove extensions from the contract. It is an abstract contract, and expects its consumer to implement the `_canSetExtension()` function, which specifies the conditions under which `Extensions` can be added, updated or removed. The rest of the implementation is generic and usable for all purposes.
@@ -42,7 +47,7 @@ Here's a very simple example that allows only the original contract deployer to 
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "lib/router-pattern/src/presets/BaseRouter.sol";
+import "lib/dynamic-contracts/src/presets/BaseRouter.sol";
 
 /// Example usage of `BaseRouter`, for demonstration only
 

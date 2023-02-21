@@ -1,8 +1,8 @@
 {
-  "name": "@thirdweb-dev/router-pattern",
+  "name": "@thirdweb-dev/dynamic-contracts",
   "version": "1.0.0",
   "main": "index.js",
-  "repository": "https://github.com/thirdweb-dev/router-pattern.git",
+  "repository": "https://github.com/thirdweb-dev/dynamic-contracts.git",
   "author": "thirdweb <eng@thirdweb.com>",
   "license": "MIT",
   "dependencies": {},
