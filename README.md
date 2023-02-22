@@ -65,11 +65,17 @@ contract SimpleRouter is BaseRouter {
     }
 }
 ```
+#### Choosing a permission model:
 
 The main decision as a `Router` contract author is to decide the permission model to add/update/remove extensions. This repository offers some presets for a few possible permission models:
 
-- [`RouterUpgradeable`](/src/presets/example/RouterUpgradeable.sol) is a preset that allows the contract owner to add / upgrade / remove extensions.
-- [`RouterImmutable`](/src/presets/example/RouterImmutable.sol) is a preset you can use to create static contracts that cannot be updated or get new functionality. This still allows you to create modular contracts that go beyond the contract size limit, but guarantees that the original functionality cannot be altered.
+- #### [`RouterUpgradeable`](/src/presets/example/RouterUpgradeable.sol) 
+
+This a is a preset that **allows the contract owner to add / upgrade / remove extensions**. The contract owner can be changed. This is a very basic permission model, but enough for some use cases. You can expand on this and use a permission based model instead for example.
+
+- #### [`RouterImmutable`](/src/presets/example/RouterImmutable.sol) 
+
+This is a preset you can use to **create static contracts that cannot be updated or get new functionality**. This still allows you to create modular contracts that go beyond the contract size limit, but guarantees that the original functionality cannot be altered. With this model, you would pass all the `Extensions` for this contract at construction time, and guarantee that the functionality is immutable.
 
 Other permissions models might include an explicit list of extensions that can be added or removed for example. The implementation is up to the Router author.
 
