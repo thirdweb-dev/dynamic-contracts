@@ -1,10 +1,21 @@
 {
   "name": "@thirdweb-dev/dynamic-contracts",
+  "description": "Architectural pattern for writing dynamic smart contracts in Solidity",
   "version": "1.0.0",
   "main": "index.js",
-  "repository": "https://github.com/thirdweb-dev/dynamic-contracts.git",
-  "author": "thirdweb <eng@thirdweb.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thirdweb-dev/dynamic-contracts.git"
+  },
+  "bugs": {
+    "url": "https://github.com/thirdweb-dev/dynamic-contracts/issues"
+  },
+  "author": "thirdweb engineering <eng@thirdweb.com>",
+  "homepage": "https://thirdweb.com",
   "license": "MIT",
+  "files": [
+    "**/*.sol"
+  ],
   "dependencies": {},
   "scripts": {}
 }
