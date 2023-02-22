@@ -13,6 +13,9 @@
   "author": "thirdweb engineering <eng@thirdweb.com>",
   "homepage": "https://thirdweb.com",
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "files": [
     "**/*.sol"
   ],
