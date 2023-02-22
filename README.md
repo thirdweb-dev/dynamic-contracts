@@ -11,10 +11,16 @@ This repository provides core interfaces and preset implementations that:
 
 ## Installation
 
-Install the contents of this repo in your `forge` repository.
+#### Forge
 
 ```bash
 forge install https://github.com/thirdweb-dev/dynamic-contracts
+```
+
+#### Hardhat
+
+```bash
+npm install @thirdweb-dev/dynamic-contracts
 ```
 
 ## Core concepts
