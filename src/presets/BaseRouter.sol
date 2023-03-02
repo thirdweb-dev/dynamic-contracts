@@ -41,6 +41,15 @@ abstract contract BaseRouter is IBaseRouter, Router, ExtensionState {
     }
 
     /*///////////////////////////////////////////////////////////////
+                            ERC 165 logic
+    //////////////////////////////////////////////////////////////*/
+
+    /// @dev See {IERC165-supportsInterface}.
+    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
+        return interfaceId == type(IBaseRouter).interfaceId || super.supportsInterface(interfaceId);
+    }
+
+    /*///////////////////////////////////////////////////////////////
                         External functions
     //////////////////////////////////////////////////////////////*/
 
