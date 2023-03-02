@@ -4,8 +4,9 @@
 pragma solidity ^0.8.0;
 
 import "../interface/IRouter.sol";
+import "../eip/ERC165.sol";
 
-abstract contract Router is IRouter {
+abstract contract Router is IRouter, ERC165 {
 
     fallback() external payable virtual {
     /// @dev delegate calls the appropriate implementation smart contract for a given function.
@@ -14,6 +15,11 @@ abstract contract Router is IRouter {
     }
 
     receive() external payable virtual {}
+
+    /// @dev See {IERC165-supportsInterface}.
+    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
+        return interfaceId == type(IRouter).interfaceId || super.supportsInterface(interfaceId);
+    }
 
     /// @dev delegateCalls an `implementation` smart contract.
     function _delegate(address implementation) internal virtual {
