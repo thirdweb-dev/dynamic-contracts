@@ -87,7 +87,7 @@ Other permissions models might include an explicit list of extensions that can b
 
 ### 2. `Extensions` - implementing routeable contracts
 
-An `Extension` contract is written like any other smart contract, expect that its state must be defined using a `struct` within a `library` and at a well defined storage location. This storage technique is known as [storage structs](https://mirror.xyz/horsefacts.eth/EPB4o-eyDl0N8gu0gEz1uw7BTITheaZUqIAOEK1m-jE). This is important to ensure that state defined in an `Extension` doesn't conflict with the state of another `Extension` of the same `Router` at the same storage location.
+An `Extension` contract is written like any other smart contract, except that its state must be defined using a `struct` within a `library` and at a well defined storage location. This storage technique is known as [storage structs](https://mirror.xyz/horsefacts.eth/EPB4o-eyDl0N8gu0gEz1uw7BTITheaZUqIAOEK1m-jE). This is important to ensure that state defined in an `Extension` doesn't conflict with the state of another `Extension` of the same `Router` at the same storage location.
 
 Here's an example of a simple contract written as an `Extension` contract:
 
