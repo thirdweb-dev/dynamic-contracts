@@ -18,4 +18,7 @@ interface IBaseRouter is IDefaultExtensionSet {
 
     /// @dev Removes an existing extension from the router.
     function removeExtension(string memory extensionName) external;
+
+    /// @dev Returns all extensions stored.
+    function getAllExtensions() external view returns (Extension[] memory allExtensions);
 }
