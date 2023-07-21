@@ -18,7 +18,7 @@ contract RouterImmutable is BaseRouter {
     //////////////////////////////////////////////////////////////*/
 
     /// @dev Returns whether extensions can be set in the given execution context.
-    function _canSetExtension() internal pure override returns (bool) {
+    function _canSetExtension(Extension memory) internal pure override returns (bool) {
         return false;
     }
 }
