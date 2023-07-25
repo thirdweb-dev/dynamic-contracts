@@ -41,10 +41,10 @@ The simplest way to write a `Router` contract is to extend the preset [`BaseRout
 import "lib/dynamic-contracts/src/presets/BaseRouter.sol";
 ```
 
-The `BaseRouter` contract comes with an API to add/update/remove extensions from the contract. It is an abstract contract, and expects its consumer to implement the `_canSetExtension()` function, which specifies the conditions under which `Extensions` can be added, updated or removed. The rest of the implementation is generic and usable for all purposes.
+The `BaseRouter` contract comes with an API to add/update/remove extensions from the contract. It is an abstract contract, and expects its consumer to implement the `_canSetExtension(...)` function, which specifies the conditions under which `Extensions` can be added, updated or removed. The rest of the implementation is generic and usable for all purposes.
 
 ```solidity
-function _canSetExtension() internal view virtual returns (bool);
+function _canSetExtension(Extension memory _extension) internal view virtual returns (bool);
 ```
 
 Here's a very simple example that allows only the original contract deployer to add/update/remove `Extensions`.
@@ -66,24 +66,29 @@ contract SimpleRouter is BaseRouter {
     }
 
     /// @dev Returns whether extensions can be set in the given execution context.
-    function _canSetExtension() internal view virtual override returns (bool) {
+    function _canSetExtension(Extension memory _extension) internal view virtual override returns (bool) {
         return msg.sender == deployer;
     }
 }
 ```
+
 #### Choosing a permission model:
 
 The main decision as a `Router` contract author is to decide the permission model to add/update/remove extensions. This repository offers some presets for a few possible permission models:
 
-- #### [`RouterUpgradeable`](/src/presets/example/RouterUpgradeable.sol) 
+- #### [`RouterUpgradeable`](/src/presets/example/RouterUpgradeable.sol)
 
 This a is a preset that **allows the contract owner to add / upgrade / remove extensions**. The contract owner can be changed. This is a very basic permission model, but enough for some use cases. You can expand on this and use a permission based model instead for example.
 
-- #### [`RouterImmutable`](/src/presets/example/RouterImmutable.sol) 
+- #### [`RouterImmutable`](/src/presets/example/RouterImmutable.sol)
 
 This is a preset you can use to **create static contracts that cannot be updated or get new functionality**. This still allows you to create modular contracts that go beyond the contract size limit, but guarantees that the original functionality cannot be altered. With this model, you would pass all the `Extensions` for this contract at construction time, and guarantee that the functionality is immutable.
 
 Other permissions models might include an explicit list of extensions that can be added or removed for example. The implementation is up to the Router author.
+
+- #### [`RouterRegistryConstrained`](/src/presets/example/RouterRegistryConstrained.sol)
+
+This is a preset that **allows the owner to change extensions if they are defined on a given registry contract**. This is meant to demonstrate how a protocol ecosystem could constrain extensions to known, audited contracts, for instance. The registry and router upgrade models are of course too basic for production as written.
 
 ### 2. `Extensions` - implementing routeable contracts
 

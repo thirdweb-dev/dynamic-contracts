@@ -36,6 +36,7 @@ abstract contract BaseRouter is IBaseRouter, Router, ExtensionState {
         uint256 len = _extensions.length;
 
         for (uint256 i = 0; i < len; i += 1) {
+            require(_canSetExtension(_extensions[i]), "BaseRouter: not authorized.");
             map.setExtension(_extensions[i]);
         }
     }
@@ -55,23 +56,23 @@ abstract contract BaseRouter is IBaseRouter, Router, ExtensionState {
 
     /// @dev Adds a new extension to the router.
     function addExtension(Extension memory _extension) external {
-        require(_canSetExtension(), "BaseRouter: caller not authorized.");
+        require(_canSetExtension(_extension), "BaseRouter: not authorized.");
 
         _addExtension(_extension);
     }
 
     /// @dev Updates an existing extension in the router, or overrides a default extension.
     function updateExtension(Extension memory _extension) external {
-        require(_canSetExtension(), "BaseRouter: caller not authorized.");
+        require(_canSetExtension(_extension), "BaseRouter: not authorized.");
 
         _updateExtension(_extension);
     }
 
     /// @dev Removes an existing extension from the router.
-    function removeExtension(string memory _extensionName) external {
-        require(_canSetExtension(), "BaseRouter: caller not authorized.");
+    function removeExtension(Extension memory _extension) external {
+        require(_canSetExtension(_extension), "BaseRouter: not authorized.");
 
-        _removeExtension(_extensionName);
+        _removeExtension(_extension.metadata.name);
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -159,5 +160,5 @@ abstract contract BaseRouter is IBaseRouter, Router, ExtensionState {
     //////////////////////////////////////////////////////////////*/
 
     /// @dev Returns whether a extension can be set in the given execution context.
-    function _canSetExtension() internal view virtual returns (bool);
+    function _canSetExtension(Extension memory _extension) internal view virtual returns (bool);
 }
