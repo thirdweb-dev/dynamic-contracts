@@ -1,7 +1,10 @@
 [profile.default]
 libs = ['lib']
 out = 'out'
-remappings = []
+remappings = [
+    '@ds-test=lib/ds-test/src/',
+  '@std=lib/forge-std/src/'
+]
 src = 'src'
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config
