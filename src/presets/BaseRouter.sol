@@ -59,23 +59,21 @@ abstract contract BaseRouter is IBaseRouter, Router, ExtensionState {
      *          given precedence over default extensions in DefaultExtensionSet.
      */
     function getAllExtensions() external view returns (Extension[] memory allExtensions) {
-        ExtensionStateStorage.Data storage data = ExtensionStateStorage.extensionStateStorage();
-        string[] memory names = data.extensionNames.values();
+        string[] memory names = _extensionStateStorage().extensionNames.values();
         uint256 namesLen = names.length;
 
         allExtensions = new Extension[](namesLen);
         uint256 idx = 0;
 
         for (uint256 i = 0; i < namesLen; i += 1) {
-            allExtensions[i] = data.extensions[names[i]];
+            allExtensions[i] = _extensionStateStorage().extensions[names[i]];
             idx += 1;
         }
     }
 
     /// @dev Returns the extension metadata and functions for a given extension.
     function getExtension(string memory _extensionName) public view returns (Extension memory) {
-        ExtensionStateStorage.Data storage data = ExtensionStateStorage.extensionStateStorage();
-        return data.extensions[_extensionName];
+        return _extensionStateStorage().extensions[_extensionName];
     }
 
     /// @dev Returns the extension's implementation smart contract address.
@@ -90,8 +88,7 @@ abstract contract BaseRouter is IBaseRouter, Router, ExtensionState {
 
     /// @dev Returns the extension metadata for a given function.
     function getExtensionForFunction(bytes4 _functionSelector) public view returns (ExtensionMetadata memory) {
-        ExtensionStateStorage.Data storage data = ExtensionStateStorage.extensionStateStorage();
-        return data.extensionMetadata[_functionSelector];
+        return _extensionStateStorage().extensionMetadata[_functionSelector];
     }
 
     /// @dev Returns the extension implementation address stored in router, for the given function.

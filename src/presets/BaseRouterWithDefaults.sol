@@ -87,13 +87,12 @@ abstract contract BaseRouterWithDefaults is IBaseRouter, Router, ExtensionState 
         Extension[] memory defaultExtensions = IDefaultExtensionSet(defaultExtensionSet).getAllExtensions();
         uint256 defaultExtensionsLen = defaultExtensions.length;
 
-        ExtensionStateStorage.Data storage data = ExtensionStateStorage.extensionStateStorage();
-        string[] memory names = data.extensionNames.values();
+        string[] memory names = _extensionStateStorage().extensionNames.values();
         uint256 namesLen = names.length;
 
         uint256 overrides = 0;
         for (uint256 i = 0; i < defaultExtensionsLen; i += 1) {
-            if (data.extensionNames.contains(defaultExtensions[i].metadata.name)) {
+            if (_extensionStateStorage().extensionNames.contains(defaultExtensions[i].metadata.name)) {
                 overrides += 1;
             }
         }
@@ -105,24 +104,23 @@ abstract contract BaseRouterWithDefaults is IBaseRouter, Router, ExtensionState 
 
         for (uint256 i = 0; i < defaultExtensionsLen; i += 1) {
             string memory name = defaultExtensions[i].metadata.name;
-            if (!data.extensionNames.contains(name)) {
+            if (!_extensionStateStorage().extensionNames.contains(name)) {
                 allExtensions[idx] = defaultExtensions[i];
                 idx += 1;
             }
         }
 
         for (uint256 i = 0; i < namesLen; i += 1) {
-            allExtensions[idx] = data.extensions[names[i]];
+            allExtensions[idx] = _extensionStateStorage().extensions[names[i]];
             idx += 1;
         }
     }
 
     /// @dev Returns the extension metadata and functions for a given extension.
     function getExtension(string memory _extensionName) public view returns (Extension memory) {
-        ExtensionStateStorage.Data storage data = ExtensionStateStorage.extensionStateStorage();
-        bool isLocalExtension = data.extensionNames.contains(_extensionName);
+        bool isLocalExtension = _extensionStateStorage().extensionNames.contains(_extensionName);
 
-        return isLocalExtension ? data.extensions[_extensionName] : IDefaultExtensionSet(defaultExtensionSet).getExtension(_extensionName);
+        return isLocalExtension ? _extensionStateStorage().extensions[_extensionName] : IDefaultExtensionSet(defaultExtensionSet).getExtension(_extensionName);
     }
 
     /// @dev Returns the extension's implementation smart contract address.
@@ -137,8 +135,7 @@ abstract contract BaseRouterWithDefaults is IBaseRouter, Router, ExtensionState 
 
     /// @dev Returns the extension metadata for a given function.
     function getExtensionForFunction(bytes4 _functionSelector) public view returns (ExtensionMetadata memory) {
-        ExtensionStateStorage.Data storage data = ExtensionStateStorage.extensionStateStorage();
-        ExtensionMetadata memory metadata = data.extensionMetadata[_functionSelector];
+        ExtensionMetadata memory metadata = _extensionStateStorage().extensionMetadata[_functionSelector];
 
         bool isLocalExtension = metadata.implementation != address(0);
 
