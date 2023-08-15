@@ -12,7 +12,7 @@ contract RouterUpgradeable is BaseRouter {
     
     address public admin;
 
-    constructor(Extension[] memory _extensions) BaseRouter(_extensions) {
+    constructor() {
         admin = msg.sender;
     }
 

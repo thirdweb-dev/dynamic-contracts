@@ -43,23 +43,20 @@ contract DefaultExtensionSet is IDefaultExtensionSet, ExtensionState {
 
     /// @notice Returns all extensions stored.
     function getAllExtensions() external view returns (Extension[] memory allExtensions) {
-        ExtensionStateStorage.Data storage data = ExtensionStateStorage.extensionStateStorage();
-
-        string[] memory names = data.extensionNames.values();
+        string[] memory names = _extensionStateStorage().extensionNames.values();
         uint256 len = names.length;
 
         allExtensions = new Extension[](len);
 
         for (uint256 i = 0; i < len; i += 1) {
-            allExtensions[i] = data.extensions[names[i]];
+            allExtensions[i] = _extensionStateStorage().extensions[names[i]];
         }
     }
 
     /// @notice Returns the extension metadata and functions for a given extension.
     function getExtension(string memory _extensionName) public view returns (Extension memory) {
-        ExtensionStateStorage.Data storage data = ExtensionStateStorage.extensionStateStorage();
-        require(data.extensionNames.contains(_extensionName), "DefaultExtensionSet: extension does not exist.");
-        return data.extensions[_extensionName];
+        require(_extensionStateStorage().extensionNames.contains(_extensionName), "DefaultExtensionSet: extension does not exist.");
+        return _extensionStateStorage().extensions[_extensionName];
     }
 
     /// @notice Returns the extension's implementation smart contract address.
@@ -74,8 +71,7 @@ contract DefaultExtensionSet is IDefaultExtensionSet, ExtensionState {
 
     /// @notice Returns the extension metadata for a given function.
     function getExtensionForFunction(bytes4 _functionSelector) external view returns (ExtensionMetadata memory) {
-        ExtensionStateStorage.Data storage data = ExtensionStateStorage.extensionStateStorage();
-        ExtensionMetadata memory metadata = data.extensionMetadata[_functionSelector];
+        ExtensionMetadata memory metadata = _extensionStateStorage().extensionMetadata[_functionSelector];
         require(metadata.implementation != address(0), "DefaultExtensionSet: no extension for function.");
         return metadata;
     }
