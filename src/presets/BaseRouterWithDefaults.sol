@@ -36,7 +36,6 @@ abstract contract BaseRouterWithDefaults is IBaseRouter, Router, ExtensionState 
         uint256 len = _extensions.length;
 
         for (uint256 i = 0; i < len; i += 1) {
-            require(_canSetExtension(_extensions[i]), "BaseRouter: not authorized.");
             map.setExtension(_extensions[i]);
         }
     }
