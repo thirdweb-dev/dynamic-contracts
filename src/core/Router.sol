@@ -8,7 +8,7 @@ import "../eip/ERC165.sol";
 
 abstract contract Router is IRouter, ERC165 {
 
-    fallback() external virtual {
+    fallback() external payable virtual {
     /// @dev delegate calls the appropriate implementation smart contract for a given function.
         address implementation = getImplementationForFunction(msg.sig);
         _delegate(implementation);
