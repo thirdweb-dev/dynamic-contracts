@@ -48,9 +48,20 @@ contract ExtensionState is IExtension {
 
         uint256 len = _extension.functions.length;
         for (uint256 i = 0; i < len; i += 1) {
+
+            /**
+             *  Note: `bytes4(0)` is the function selector for the `receive` function.
+             *        So, we maintain a special fn selector-signature mismatch check for the `receive` function.
+             */
+            bool mismatch = false;
+            if(_extension.functions[i].functionSelector == bytes4(0)) {
+                mismatch = keccak256(abi.encode((_extension.functions[i].functionSignature)) != keccak256(abi.encode((_extension.functions[i].functionSignature));
+            } else {
+                mismatch = _extension.functions[i].functionSelector !=
+                    bytes4(keccak256(abi.encodePacked(_extension.functions[i].functionSignature)));
+            }
             require(
-                _extension.functions[i].functionSelector ==
-                    bytes4(keccak256(abi.encodePacked(_extension.functions[i].functionSignature))),
+                !mismatch,
                 "ExtensionState: fn selector and signature mismatch."
             );
             require(
@@ -90,12 +101,21 @@ contract ExtensionState is IExtension {
 
         uint256 len = _extension.functions.length;
         for (uint256 i = 0; i < len; i += 1) {
+            /**
+             *  Note: `bytes4(0)` is the function selector for the `receive` function.
+             *        So, we maintain a special fn selector-signature mismatch check for the `receive` function.
+             */
+            bool mismatch = false;
+            if(_extension.functions[i].functionSelector == bytes4(0)) {
+                mismatch = keccak256(abi.encode((_extension.functions[i].functionSignature)) != keccak256(abi.encode((_extension.functions[i].functionSignature));
+            } else {
+                mismatch = _extension.functions[i].functionSelector !=
+                    bytes4(keccak256(abi.encodePacked(_extension.functions[i].functionSignature)));
+            }
             require(
-                _extension.functions[i].functionSelector ==
-                    bytes4(keccak256(abi.encodePacked(_extension.functions[i].functionSignature))),
+                !mismatch,
                 "ExtensionState: fn selector and signature mismatch."
             );
-
             require(
                 _extensionStateStorage().extensionMetadata[_extension.functions[i].functionSelector].implementation == address(0),
                 "ExtensionState: extension already exists for function."
