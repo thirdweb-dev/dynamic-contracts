@@ -55,7 +55,7 @@ contract ExtensionState is IExtension {
              */
             bool mismatch = false;
             if(_extension.functions[i].functionSelector == bytes4(0)) {
-                mismatch = keccak256(abi.encode(_extension.functions[i].functionSignature)) != keccak256(abi.encode(_extension.functions[i].functionSignature));
+                mismatch = keccak256(abi.encode(_extension.functions[i].functionSignature)) != keccak256(abi.encode("receive()"));
             } else {
                 mismatch = _extension.functions[i].functionSelector !=
                     bytes4(keccak256(abi.encodePacked(_extension.functions[i].functionSignature)));
@@ -107,7 +107,7 @@ contract ExtensionState is IExtension {
              */
             bool mismatch = false;
             if(_extension.functions[i].functionSelector == bytes4(0)) {
-                mismatch = keccak256(abi.encode(_extension.functions[i].functionSignature)) != keccak256(abi.encode(_extension.functions[i].functionSignature));
+                mismatch = keccak256(abi.encode(_extension.functions[i].functionSignature)) != keccak256(abi.encode("receive()"));
             } else {
                 mismatch = _extension.functions[i].functionSelector !=
                     bytes4(keccak256(abi.encodePacked(_extension.functions[i].functionSignature)));
