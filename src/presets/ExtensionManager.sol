@@ -182,7 +182,7 @@ contract ExtensionManager is IExtensionManager, IRouterState, IRouterStateGetter
     }
 
     /// @dev Adds a given function to an Extension.
-    function _addFunctionToExtension(string memory _extensionName, ExtensionFunction memory _extFunction) internal {
+    function _addFunctionToExtension(string memory _extensionName, ExtensionFunction memory _extFunction) internal virtual {
         /**
          *  Note: `bytes4(0)` is the function selector for the `receive` function.
          *        So, we maintain a special fn selector-signature mismatch check for the `receive` function.

@@ -4,10 +4,11 @@
 pragma solidity ^0.8.0;
 
 import "../interface/IRouterState.sol";
+import "../interface/IRouterStateGetters.sol";
 import "../lib/ExtensionManagerStorage.sol";
 import "../lib/StringSet.sol";
 
-contract DefaultExtensionSet is IRouterState {
+contract DefaultExtensionSet is IRouterState, IRouterStateGetters {
 
     using StringSet for StringSet.Set;
 
@@ -38,6 +39,17 @@ contract DefaultExtensionSet is IRouterState {
             allExtensions[i] = _getExtension(names[i]);
         }
     }
+
+    /// @dev Returns the extension metadata for a given function.
+    function getMetadataForFunction(bytes4 functionSelector) public view returns (ExtensionMetadata memory) {
+        return _extensionManagerStorage().extensionMetadata[functionSelector];
+    }
+
+    /// @dev Returns the extension metadata and functions for a given extension.
+    function getExtension(string memory extensionName) public view returns (Extension memory) {
+        return _getExtension(extensionName);
+    }
+
 
     /*///////////////////////////////////////////////////////////////
                             Internal functions
