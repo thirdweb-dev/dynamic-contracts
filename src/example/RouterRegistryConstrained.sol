@@ -3,7 +3,7 @@
 
 pragma solidity ^0.8.0;
 
-import "../BaseRouterWithDefaults.sol";
+import "../presets/BaseRouter.sol";
 
 /**
  *  This smart contract is an EXAMPLE, and is not meant for use in production.
@@ -26,13 +26,13 @@ contract ExtensionRegistry {
 /**
  *  This smart contract is an EXAMPLE, and is not meant for use in production.
  */
-contract RouterRegistryConstrained is BaseRouterWithDefaults {
+contract RouterRegistryConstrained is BaseRouter {
 
     address public admin;
     ExtensionRegistry public registry;
 
     // @dev Cannot initialize with extensions before registry is set, so we pass empty array to base constructor.
-    constructor(address _registry) BaseRouterWithDefaults(new Extension[](0)) {
+    constructor(address _registry) {
         admin = msg.sender;
         registry = ExtensionRegistry(_registry);
     }
@@ -47,8 +47,18 @@ contract RouterRegistryConstrained is BaseRouterWithDefaults {
                             Overrides
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Returns whether extensions can be set in the given execution context.
-    function _canSetExtension(Extension memory _extension) internal view virtual override returns (bool) {
-        return msg.sender == admin && registry.isRegistered(_extension.metadata.implementation);
+    /// @dev Returns whether a new function can be added in the given execution context.
+    function _canAddFunction(FunctionWithMetadata memory _function) internal view virtual override returns (bool) {
+        return msg.sender == admin && registry.isRegistered(_function.implementation);
+    }
+    
+    /// @dev Returns whether a function can be updated in the given execution context.
+    function _canUpdateFunction(FunctionWithMetadata memory _function) internal view virtual override returns (bool) {
+        return msg.sender == admin && registry.isRegistered(_function.implementation);
+    }
+    
+    /// @dev Returns whether a function can be deleted in the given execution context.
+    function _canDeleteFunction(bytes4) internal view virtual override returns (bool) {
+        return msg.sender == admin;
     }
 }

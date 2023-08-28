@@ -3,19 +3,9 @@
 
 pragma solidity ^0.8.0;
 
-interface IFunctionManager {
+import "./IRouterState.sol";
 
-    /*///////////////////////////////////////////////////////////////
-                                Structs
-    //////////////////////////////////////////////////////////////*/
-
-    struct FunctionWithMetadata {
-        string name;
-        string metadataURI;
-        address implementation;
-        bytes4 functionSelector;
-        string functionSignature;
-    }
+interface IFunctionManager is IRouterState {
 
     /*///////////////////////////////////////////////////////////////
                                 Events

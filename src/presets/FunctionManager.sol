@@ -12,6 +12,26 @@ abstract contract FunctionManager is IFunctionManager {
     using EnumerableSet for EnumerableSet.Bytes32Set;
 
     /*///////////////////////////////////////////////////////////////
+                            View functions
+    //////////////////////////////////////////////////////////////*/
+
+    function getAllFunctions() public view virtual returns (FunctionWithMetadata[] memory functions) {
+        bytes32[] memory allFunctions = FunctionManagerStorage.data().allFunctions.values();
+        functions = new FunctionWithMetadata[](allFunctions.length);
+
+        for(uint256 i = 0; i < allFunctions.length; i++) {
+            bytes4 functionSelector = bytes4(allFunctions[i]);
+            functions[i] = FunctionManagerStorage.data().functionData[functionSelector];
+        }
+    }
+
+    /// @dev Returns a function of the Router.
+    function getFunction(bytes4 _functionSelector) external view returns (FunctionWithMetadata memory functionWithMetadata) {
+        functionWithMetadata = _getFunctionData(_functionSelector);
+    }
+
+
+    /*///////////////////////////////////////////////////////////////
                         External functions
     //////////////////////////////////////////////////////////////*/
 
@@ -49,14 +69,8 @@ abstract contract FunctionManager is IFunctionManager {
                         Internal functions
     //////////////////////////////////////////////////////////////*/
 
-    function _getAllFunctionsWithMetadata() internal view virtual returns (FunctionWithMetadata[] memory functions) {
-        bytes32[] memory allFunctions = FunctionManagerStorage.data().allFunctions.values();
-        functions = new FunctionWithMetadata[](allFunctions.length);
-
-        for(uint256 i = 0; i < allFunctions.length; i++) {
-            bytes4 functionSelector = bytes4(allFunctions[i]);
-            functions[i] = FunctionManagerStorage.data().functionData[functionSelector];
-        }
+    function _getFunctionData(bytes4 _functionSelector) internal view virtual returns (FunctionWithMetadata memory functionWithMetadata) {
+        functionWithMetadata = FunctionManagerStorage.data().functionData[_functionSelector];
     }
 
     function _addFunction(FunctionWithMetadata memory _data) internal virtual {
