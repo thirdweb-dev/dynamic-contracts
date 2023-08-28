@@ -16,35 +16,41 @@ interface IExtensionManager is IExtension {
     function addExtension(Extension memory extension) external;
 
     /**
-     *  @notice Overwrite an existing extension of the router.
+     *  @notice Fully replace an existing extension of the router.
      */
-    function overwriteExtension(Extension memory extension) external;
+    function replaceExtension(Extension memory extension) external;
 
     /**
      *  @notice Remove an existing extension from the router.
      */
-    function removeExtension(string memory extName) external;
+    function removeExtension(string memory extensionName) external;
 
     /**
-     *  @notice Update a single, existing function of the router.
+     *  @notice Add a single function to an existing extension.
      */
-    function updateFunction(ExtensionFunction memory extFunction, ExtensionMetadata memory extMetadata) external;
-
+    function addFunctionToExtension(string memory extensionName, ExtensionFunction memory extFunction) external;
+    
     /**
-     *  @notice Remove a single, existing function from the router.
+     *  @notice Remove a single function from an existing extension.
      */
-    function removeFunction(bytes4 functionSelector) external;
+    function removeFunctionFromExtension(string memory extensionName, bytes4 functionSelector) external;
 
     /*///////////////////////////////////////////////////////////////
                                 Events
     //////////////////////////////////////////////////////////////*/
 
     /// @dev Emitted when a extension is added.
-    event ExtensionAdded(address indexed name, address indexed implementation, Extension extension);
+    event ExtensionAdded(string indexed name, address indexed implementation, Extension extension);
 
     /// @dev Emitted when a extension is added.
-    event ExtensionUpdated(address indexed name, address indexed implementation, Extension extension);
+    event ExtensionReplaced(string indexed name, address indexed implementation, Extension extension);
 
     /// @dev Emitted when a extension is added.
-    event ExtensionRemoved(address indexed name, address indexed implementation, Extension extension);
+    event ExtensionRemoved(string indexed name, Extension extension);
+
+    /// @dev Emitted when a function is updated.
+    event FunctionAdded(string indexed name, bytes4 indexed functionSelector, ExtensionFunction extFunction, ExtensionMetadata extMetadata);
+
+    /// @dev Emitted when a function is removed.
+    event FunctionRemoved(string indexed name, bytes4 indexed functionSelector, ExtensionMetadata extMetadata);
 }
