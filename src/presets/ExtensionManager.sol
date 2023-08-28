@@ -5,9 +5,10 @@ pragma solidity ^0.8.0;
 
 import "../interface/IExtensionManager.sol";
 import "../interface/IRouterState.sol";
+import "../interface/IRouterStateGetters.sol";
 import "../lib/ExtensionManagerStorage.sol";
 
-contract ExtensionManager is IExtensionManager, IRouterState {
+contract ExtensionManager is IExtensionManager, IRouterState, IRouterStateGetters {
 
     using StringSet for StringSet.Set;
 
@@ -26,6 +27,16 @@ contract ExtensionManager is IExtensionManager, IRouterState {
         for (uint256 i = 0; i < len; i += 1) {
             allExtensions[i] = _getExtension(names[i]);
         }
+    }
+
+    /// @dev Returns the extension metadata for a given function.
+    function getMetadataForFunction(bytes4 functionSelector) public view returns (ExtensionMetadata memory) {
+        return _extensionManagerStorage().extensionMetadata[functionSelector];
+    }
+
+    /// @dev Returns the extension metadata and functions for a given extension.
+    function getExtension(string memory extensionName) public view returns (Extension memory) {
+        return _getExtension(extensionName);
     }
 
     /*///////////////////////////////////////////////////////////////

@@ -10,14 +10,8 @@ interface IRouterStateGetters is IExtension {
                             View functions
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Returns all functions that belong to the given extension contract.
-    function getAllFunctionsOfExtension(string memory extensionName) external view returns (ExtensionFunction[] memory);
-
     /// @dev Returns the extension metadata for a given function.
-    function getExtensionForFunction(bytes4 functionSelector) external view returns (ExtensionMetadata memory);
-
-    /// @dev Returns the extension's implementation smart contract address.
-    function getExtensionImplementation(string memory extensionName) external view returns (address);
+    function getMetadataForFunction(bytes4 functionSelector) external view returns (ExtensionMetadata memory);
 
     /// @dev Returns the extension metadata and functions for a given extension.
     function getExtension(string memory extensionName) external view returns (Extension memory);
