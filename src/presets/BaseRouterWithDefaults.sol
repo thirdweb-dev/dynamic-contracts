@@ -72,6 +72,54 @@ abstract contract BaseRouterWithDefaults is Router, FunctionManager {
                         Internal functions
     //////////////////////////////////////////////////////////////*/
 
+    function _addFunction(FunctionWithMetadata memory _data) internal virtual override {
+        require(_canAddFunction(_data), "FunctionManager: cannot add function");
+
+        bytes4 functionSelector = _data.functionSelector;
+
+        require(
+            IRouterState(defaultFunctions).getFunction(functionSelector).implementation == address(0),
+            "FunctionManager: re-adding default function"
+        );
+
+        // Check: must not re-add existing function selector.
+        require(!FunctionManagerStorage.data().allFunctions.add(functionSelector), "FunctionManager: function already exists");
+        require(
+                _selectorSignatureMatch(functionSelector, _data.functionSignature),
+                "ExtensionState: fn selector and signature mismatch."
+            );
+        require(_data.implementation != address(0), "FunctionManager: implementation cannot be zero address");
+
+        FunctionManagerStorage.data().allFunctions.add(functionSelector);
+        FunctionManagerStorage.data().functionData[functionSelector] = _data;
+
+        emit FunctionAdded(functionSelector, _data.implementation, _data);
+    }
+
+    function _updateFunction(FunctionWithMetadata memory _data) internal virtual override {
+        require(_canUpdateFunction(_data), "FunctionManager: cannot update function");
+
+        bytes4 functionSelector = _data.functionSelector;
+
+        if(IRouterState(defaultFunctions).getFunction(functionSelector).implementation == address(0)) {
+            // Check: must not update non-existing function selector.
+            require(FunctionManagerStorage.data().allFunctions.contains(functionSelector), "FunctionManager: function does not exist");    
+        } else {
+            // Check: updating a default function for the first time.
+            require(FunctionManagerStorage.data().allFunctions.add(functionSelector), "FunctionManager: function does not exist");    
+        }
+
+        require(
+                _selectorSignatureMatch(functionSelector, _data.functionSignature),
+                "ExtensionState: fn selector and signature mismatch."
+            );
+        require(_data.implementation != address(0), "FunctionManager: implementation cannot be zero address");
+
+        FunctionManagerStorage.data().functionData[functionSelector] = _data;
+
+        emit FunctionUpdated(functionSelector, _data.implementation, _data);
+    }
+
     function _getFunctionData(bytes4 _functionSelector) internal view virtual override returns (FunctionWithMetadata memory functionWithMetadata) {
         FunctionWithMetadata memory fn = FunctionManagerStorage.data().functionData[_functionSelector];
         return fn.implementation != address(0) ? fn : IRouterState(defaultFunctions).getFunction(_functionSelector);
