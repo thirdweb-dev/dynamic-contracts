@@ -3,9 +3,9 @@
 
 pragma solidity ^0.8.0;
 
-interface IRouterPayable {
-    fallback() external payable;
-    receive() external payable;
+import "./IRouter.sol";
 
-    function getImplementationForFunction(bytes4 _functionSelector) external view returns (address);
+/// @dev See {IRouter}.
+interface IRouterPayable is IRouter {
+    receive() external payable;
 }

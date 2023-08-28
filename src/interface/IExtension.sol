@@ -42,22 +42,4 @@ interface IExtension {
         ExtensionMetadata metadata;
         ExtensionFunction[] functions;
     }
-
-    /*///////////////////////////////////////////////////////////////
-                                Events
-    //////////////////////////////////////////////////////////////*/
-
-    /// @dev Emitted when a extension is added; emitted for each function of the extension.
-    event ExtensionAdded(address indexed extensionAddress, bytes4 indexed functionSelector, string functionSignature);
-
-    /// @dev Emitted when extension is updated; emitted for each function of the extension.
-    event ExtensionUpdated(
-        address indexed oldExtensionAddress,
-        address indexed newExtensionAddress,
-        bytes4 indexed functionSelector,
-        string functionSignature
-    );
-
-    /// @dev Emitted when a extension is removed; emitted for each function of the extension.
-    event ExtensionRemoved(address indexed extensionAddress, bytes4 indexed functionSelector, string functionSignature);
 }
