@@ -84,6 +84,7 @@ abstract contract FunctionManager is IFunctionManager {
                 _selectorSignatureMatch(functionSelector, _data.functionSignature),
                 "ExtensionState: fn selector and signature mismatch."
             );
+        require(_data.implementation != address(0), "FunctionManager: implementation cannot be zero address");
 
         FunctionManagerStorage.data().allFunctions.add(functionSelector);
         FunctionManagerStorage.data().functionData[functionSelector] = _data;
@@ -102,6 +103,7 @@ abstract contract FunctionManager is IFunctionManager {
                 _selectorSignatureMatch(functionSelector, _data.functionSignature),
                 "ExtensionState: fn selector and signature mismatch."
             );
+        require(_data.implementation != address(0), "FunctionManager: implementation cannot be zero address");
 
         FunctionManagerStorage.data().functionData[functionSelector] = _data;
 
