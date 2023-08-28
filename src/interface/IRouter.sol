@@ -7,7 +7,7 @@ pragma solidity ^0.8.0;
  *	@dev Fallback function delegateCalls `getImplementationForFunction(msg.sig)` for a given incoming call.
  *	NOTE: The ERC-165 identifier for this interface is 0xce0b6013.
  */
-interface Router {
+interface IRouter {
 
 	/**
 	 *	@notice delegateCalls the appropriate implementation address for the given incoming function call.
