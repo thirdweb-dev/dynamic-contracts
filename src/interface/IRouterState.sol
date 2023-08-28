@@ -19,6 +19,7 @@ interface IRouterState {
         address implementation;
         bytes4 functionSelector;
         string functionSignature;
+        bytes extraData;
     }
 
     /*///////////////////////////////////////////////////////////////
