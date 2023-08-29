@@ -17,7 +17,7 @@ contract ExtensionManager is IExtensionManager, IRouterState, IRouterStateGetter
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Returns all extensions of the Router.
-    function getAllExtensions() external view override returns (Extension[] memory allExtensions) {
+    function getAllExtensions() external view virtual override returns (Extension[] memory allExtensions) {
 
         string[] memory names = _extensionManagerStorage().extensionNames.values();
         uint256 len = names.length;
@@ -30,12 +30,12 @@ contract ExtensionManager is IExtensionManager, IRouterState, IRouterStateGetter
     }
 
     /// @dev Returns the extension metadata for a given function.
-    function getMetadataForFunction(bytes4 functionSelector) public view returns (ExtensionMetadata memory) {
+    function getMetadataForFunction(bytes4 functionSelector) public view virtual returns (ExtensionMetadata memory) {
         return _extensionManagerStorage().extensionMetadata[functionSelector];
     }
 
     /// @dev Returns the extension metadata and functions for a given extension.
-    function getExtension(string memory extensionName) public view returns (Extension memory) {
+    function getExtension(string memory extensionName) public view virtual returns (Extension memory) {
         return _getExtension(extensionName);
     }
 
