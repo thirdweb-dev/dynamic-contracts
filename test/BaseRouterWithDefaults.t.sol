@@ -4,16 +4,18 @@
 pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
-import "src/presets/BaseRouter.sol";
 
-contract BaseRouterTest is Test {
+import "src/interface/IExtension.sol";
+import "src/presets/BaseRouterWithDefaults.sol";
 
-    BaseRouter internal router;
+contract BaseRouterTest is Test, IExtension {
+
+    BaseRouterWithDefaults internal router;
 
     function setUp() public virtual {
 
-        // Deploy BaseRouter
-        router = new BaseRouter();
+        // Deploy BaseRouterWithDefaults
+        router = new BaseRouterWithDefaults(new Extension[](0));
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -25,6 +27,12 @@ contract BaseRouterTest is Test {
 
     // @note add a new extension with the receive function.
     function test_state_addExtension_withReceiveFunction() public {}
+
+    // @note add a new extension that already exists as a default.
+    function test_revert_addExtension_alreadyExistsAsDefault() public {}
+
+    // @note add a new extension with a fn that already exists in a default.
+    function test_revert_addExtension_fnAlreadyExistsInDefault() public {}
 
     // @note add a new extension with a function that already exists in another extension.
     function test_revert_addExtension_fnAlreadyExistsInAnotherExtension() public {}
@@ -66,6 +74,9 @@ contract BaseRouterTest is Test {
     // @note replace an extension; new extension has some existing functions, some new functions.
     function test_state_replaceExtension_someNewFunctions() public {}
 
+    // @note replace extension with an extension with a fn that already exists in a default.
+    function test_revert_replacecExtension_fnAlreadyExistsInDefault() public {}
+
     // @note replace extension with an extension with a function that already exists in another extension.
     function test_revert_replaceExtension_fnAlreadyExistsInAnotherExtension() public {}
 
@@ -97,6 +108,9 @@ contract BaseRouterTest is Test {
     // @note: remove an existing extension.
     function test_state_removeExtension() public {}
 
+    // @note remove an extension that is a default.
+    function test_revert_removeExtension_defaultExtension() public {}
+
     // @note remove an extension that does not exist.
     function test_revert_removeExtension_extensionDoesNotExist() public {}
 
@@ -112,6 +126,12 @@ contract BaseRouterTest is Test {
 
     // @note add a receive function to an extension
     function test_state_addFunctionToExtension_receiveFunction() public {}
+
+    // @note add a function to an extension where the function already exists in a default extension.
+    function test_revert_addFunctionToExtension_functionAlreadyExistsInDefault() public {}
+
+    // @note add a function to a default extension.
+    function test_revert_addFunctionToExtension_defaultExtension() public {}
 
     // @note add a function to an extension that does not exist.
     function test_revert_addFunctionToExtension_extensionDoesNotExist() public {}
@@ -141,6 +161,12 @@ contract BaseRouterTest is Test {
 
     // @note remove a receive function from an existing extension.
     function test_state_removeFunctionFromExtension_receiveFunction() public {}
+
+    // @note remove a function from non-default extension, where the extension's default version still has that function.
+    function test_revert_removeFunctionFromExtension_functionStillExistsInDefault() public {}
+
+    // @note remove a function from a default extension.
+    function test_revert_removeFunctionFromExtension_defaultExtension() public {}
 
     // @note remove a function from an extension that does not exist.
     function test_revert_removeFunctionFromExtension_extensionDoesNotExist() public {}
