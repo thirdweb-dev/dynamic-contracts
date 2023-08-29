@@ -4,16 +4,16 @@
 pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
-import "src/presets/ExtensionManager.sol";
+import "src/presets/BaseRouter.sol";
 
-contract ExtensionManagerTest is Test {
+contract BaseRouterTest is Test {
 
-    ExtensionManager internal manager;
+    BaseRouter internal manager;
 
     function setUp() public virtual {
 
-        // Deploy ExtensionManager
-        manager = new ExtensionManager();
+        // Deploy BaseRouter
+        manager = new BaseRouter();
     }
 
     /*///////////////////////////////////////////////////////////////
