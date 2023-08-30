@@ -10,6 +10,7 @@ abstract contract Router is IRouter {
     fallback() external payable virtual {
     /// @dev delegate calls the appropriate implementation smart contract for a given function.
         address implementation = getImplementationForFunction(msg.sig);
+        require(implementation != address(0), "Router: function does not exist.");
         _delegate(implementation);
     }
 
