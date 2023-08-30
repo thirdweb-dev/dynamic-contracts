@@ -8,7 +8,7 @@ import "forge-std/Test.sol";
 import "src/interface/IExtension.sol";
 import "src/presets/BaseRouterWithDefaults.sol";
 
-contract BaseRouterTest is Test, IExtension {
+contract BaseRouterWithDefaultsTest is Test, IExtension {
 
     BaseRouterWithDefaults internal router;
 
