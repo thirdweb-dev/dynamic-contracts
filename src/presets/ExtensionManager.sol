@@ -77,16 +77,14 @@ contract ExtensionManager is IExtensionManager, IRouterState, IRouterStateGetter
         
         // 1. Store: metadata for extension.
         _setMetadataForExtension(_extension.metadata.name, _extension.metadata);
-        // 2. Delete: existing extension.functions.
+        // 2. Delete: existing extension.functions and metadata for each function.
         _removeAllFunctionsFromExtension(_extension.metadata.name);
         
         uint256 len = _extension.functions.length;
         for (uint256 i = 0; i < len; i += 1) {
-            // 2. Delete: metadata for function.
-            _deleteMetadataForFunction(_extension.functions[i].functionSelector);
-            // 3. Store: function for extension.
+            // 2. Store: function for extension.
             _addFunctionToExtension(_extension.metadata.name, _extension.functions[i]);
-            // 4. Store: metadata for function.
+            // 3. Store: metadata for function.
             _setMetadataForFunction(_extension.functions[i].functionSelector, _extension.metadata);
         }
 
@@ -105,14 +103,8 @@ contract ExtensionManager is IExtensionManager, IRouterState, IRouterStateGetter
 
         // 1. Delete: metadata for extension.
         _deleteMetadataForExtension(_extensionName);
-        // 2. Delete: all functions of extension.
+        // 2. Delete: existing extension.functions and metadata for each function.
         _removeAllFunctionsFromExtension(_extensionName);
-
-        uint256 len = extension.functions.length;
-        for(uint256 i = 0; i < len; i += 1) {
-            // 3. Delete: metadata for function.
-            _deleteMetadataForFunction(extension.functions[i].functionSelector);
-        }
 
         emit ExtensionRemoved(_extensionName, extension);
     }
@@ -228,8 +220,15 @@ contract ExtensionManager is IExtensionManager, IRouterState, IRouterStateGetter
 
     /// @dev Removes all functions from an Extension.
     function _removeAllFunctionsFromExtension(string memory _extensionName) internal {        
+        ExtensionFunction[] memory functions = _extensionManagerStorage().extensions[_extensionName].functions;
+        
         // Delete: existing name -> extension.functions map
         delete _extensionManagerStorage().extensions[_extensionName].functions;
+
+        for(uint256 i = 0; i < functions.length; i += 1) {
+            // Delete: metadata for function.
+            _deleteMetadataForFunction(functions[i].functionSelector);
+        }
     }
 
     /// @dev Returns whether a new extension can be added in the given execution context.
