@@ -94,6 +94,23 @@ contract MultiplyDivide {
     }
 }
 
+contract IncrementDecrementMultiply is IncrementDecrementGet, MultiplyDivide {}
+
+contract MultiplyDivideGet {
+
+    function multiplyNumber(uint256 _multiplier) public {
+        NumberStorage.data().number *= _multiplier;
+    }
+
+    function divideNumber(uint256 _divisor) public {
+        NumberStorage.data().number /= _divisor;
+    }
+
+    function getNumber() public view returns (uint256) {
+        return NumberStorage.data().number;
+    }
+}
+
 contract AddSubstract {
 
     function addNumber(uint256 _addend) public {

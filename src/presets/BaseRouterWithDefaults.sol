@@ -73,11 +73,29 @@ contract BaseRouterWithDefaults is Router, ExtensionManager {
 
     /// @notice Returns the implementation contract address for a given function signature.
     function getImplementationForFunction(bytes4 _functionSelector) public view virtual override returns (address) {
-        
-        address defaultImpl = IRouterStateGetters(defaultExtensions).getMetadataForFunction(_functionSelector).implementation;
-        address nonDefaultImpl = _extensionManagerStorage().extensionMetadata[_functionSelector].implementation;
-        
-        return nonDefaultImpl != address(0) ? nonDefaultImpl : defaultImpl;
+
+        ExtensionMetadata memory defaultMetadata = IRouterStateGetters(defaultExtensions).getMetadataForFunction(_functionSelector);
+        ExtensionMetadata memory nonDefaultMetadata = _extensionManagerStorage().extensionMetadata[_functionSelector];
+
+        if(bytes(nonDefaultMetadata.name).length > 0) {
+            // Function exists in some non default extension.
+
+            return nonDefaultMetadata.implementation;
+        }
+
+        if(bytes(defaultMetadata.name).length > 0) {
+            // Function exists in some default extension.
+
+            if(_extensionManagerStorage().extensionNames.contains(defaultMetadata.name)) {
+                // Function exists in a replaced default extension.
+
+                return nonDefaultMetadata.implementation;
+            }
+
+            return defaultMetadata.implementation;
+        }
+
+        return address(0);
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -87,11 +105,14 @@ contract BaseRouterWithDefaults is Router, ExtensionManager {
     /// @dev Adds a given function to an Extension.
     function _addFunctionToExtension(string memory _extensionName, ExtensionFunction memory _extFunction) internal virtual override {
 
+        // Ensure that the function is not already implemented as part of a default extension different from 
+        // the targeted `_extensionName` non-default extension.
         string memory name = IRouterStateGetters(defaultExtensions).getMetadataForFunction(_extFunction.functionSelector).name;
         bytes32 fnHash = keccak256(abi.encode(name));
         require(
+            // Check: whether function is already implemented as part of some default extensions.
             bytes(name).length == 0 || fnHash == keccak256(abi.encode(_extensionName)),
-            "ExtensionManager: fn implemented under different default extension."
+            "ExtensionManager: fn implemented in default extension."
         );
 
         super._addFunctionToExtension(_extensionName, _extFunction);
@@ -111,13 +132,18 @@ contract BaseRouterWithDefaults is Router, ExtensionManager {
     }
 
     /// @dev Returns whether an extension can be replaced in the given execution context.
-    function _canReplaceExtension(Extension memory _extension) internal view virtual override returns (bool) {
+    function _canReplaceExtension(Extension memory _extension) internal virtual override returns (bool) {
         // Check: extension namespace must already exist -- as default, or in router.
         string memory name = _extension.metadata.name;
         bool isDefault = bytes(IRouterStateGetters(defaultExtensions).getExtension(name).metadata.name).length > 0;
         bool isAddedAsNonDefault = _extensionManagerStorage().extensionNames.contains(name);
 
         require(isDefault || isAddedAsNonDefault, "ExtensionManager: extension does not exist.");
+
+        if(!isAddedAsNonDefault) {
+            // Store: extension name in non-default set.
+            _extensionManagerStorage().extensionNames.add(name);
+        }
 
         // Check: extension implementation must be non-zero.
         require(_extension.metadata.implementation != address(0), "ExtensionManager: adding extension without implementation.");

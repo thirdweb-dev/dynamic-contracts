@@ -247,7 +247,7 @@ contract ExtensionManager is IExtensionManager, IRouterState, IRouterStateGetter
     }
 
     /// @dev Returns whether an extension can be replaced in the given execution context.
-    function _canReplaceExtension(Extension memory _extension) internal view virtual returns (bool) {
+    function _canReplaceExtension(Extension memory _extension) internal virtual returns (bool) {
         // Check: extension namespace must already exist.
         require(_extensionManagerStorage().extensionNames.contains(_extension.metadata.name), "ExtensionManager: extension does not exist.");
 

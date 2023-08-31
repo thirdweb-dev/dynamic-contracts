@@ -53,7 +53,7 @@ contract RouterRegistryConstrained is BaseRouterWithDefaults {
     }
 
     /// @dev Returns whether an extension can be replaced in the given execution context.
-    function _canReplaceExtension(Extension memory _extension) internal view virtual override returns (bool) {
+    function _canReplaceExtension(Extension memory _extension) internal virtual override returns (bool) {
         return super._canReplaceExtension(_extension) && msg.sender == admin && registry.isRegistered(_extension.metadata.implementation);
     }
 
