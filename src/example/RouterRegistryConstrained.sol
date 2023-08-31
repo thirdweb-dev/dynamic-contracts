@@ -47,28 +47,18 @@ contract RouterRegistryConstrained is BaseRouterWithDefaults {
                             Overrides
     //////////////////////////////////////////////////////////////*/
 
+    /// @dev Returns whether a function can be disabled in an extension in the given execution context.
+    function isAuthorizedCallToUpgrade() internal view virtual override returns (bool) {
+        return msg.sender == admin;
+    }
+
     /// @dev Returns whether a new extension can be added in the given execution context.
     function _canAddExtension(Extension memory _extension) internal virtual override returns (bool) {
-        return super._canAddExtension(_extension) && msg.sender == admin && registry.isRegistered(_extension.metadata.implementation);
+        return super._canAddExtension(_extension) && registry.isRegistered(_extension.metadata.implementation);
     }
 
     /// @dev Returns whether an extension can be replaced in the given execution context.
     function _canReplaceExtension(Extension memory _extension) internal virtual override returns (bool) {
-        return super._canReplaceExtension(_extension) && msg.sender == admin && registry.isRegistered(_extension.metadata.implementation);
-    }
-
-    /// @dev Returns whether an extension can be removed in the given execution context.
-    function _canRemoveExtension(string memory _extensionName) internal virtual override returns (bool) {
-        return super._canRemoveExtension(_extensionName) && msg.sender == admin;
-    }
-
-    /// @dev Returns whether a function can be enabled in an extension in the given execution context.
-    function _canEnableFunctionInExtension(string memory _extensionName, ExtensionFunction memory _function) internal view virtual override returns (bool) {
-        return super._canEnableFunctionInExtension(_extensionName, _function) && msg.sender == admin;
-    }
-
-    /// @dev Returns whether a function can be disabled in an extension in the given execution context.
-    function _canDisableFunctionInExtension(string memory _extensionName, bytes4 _functionSelector) internal view virtual override returns (bool) {
-        return super._canDisableFunctionInExtension(_extensionName, _functionSelector) && msg.sender == admin;
+        return super._canReplaceExtension(_extension) && registry.isRegistered(_extension.metadata.implementation);
     }
 }

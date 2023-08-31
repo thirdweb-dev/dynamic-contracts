@@ -9,6 +9,16 @@ import "src/interface/IExtension.sol";
 import "src/presets/BaseRouterWithDefaults.sol";
 import "./utils/MockContracts.sol";
 
+contract CustomRouter is BaseRouterWithDefaults {
+
+    constructor(Extension[] memory _extensions) BaseRouterWithDefaults(_extensions) {}
+
+    /// @dev Returns whether a function can be disabled in an extension in the given execution context.
+    function isAuthorizedCallToUpgrade() internal view virtual override returns (bool) {
+        return true;
+    }
+}
+
 contract BaseRouterWithDefaultsTest is Test, IExtension {
 
     BaseRouterWithDefaults internal router;
@@ -51,7 +61,7 @@ contract BaseRouterWithDefaultsTest is Test, IExtension {
         defaultExtensions[1] = defaultExtension2;
 
         // Deploy BaseRouterWithDefaults
-        router = new BaseRouterWithDefaults(defaultExtensions);
+        router = BaseRouterWithDefaults(payable(address(new CustomRouter(defaultExtensions))));
     }
 
     /*///////////////////////////////////////////////////////////////

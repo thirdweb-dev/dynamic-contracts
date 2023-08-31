@@ -8,9 +8,18 @@ import "../interface/IRouterState.sol";
 import "../interface/IRouterStateGetters.sol";
 import "../lib/ExtensionManagerStorage.sol";
 
-contract ExtensionManager is IExtensionManager, IRouterState, IRouterStateGetters {
+abstract contract ExtensionManager is IExtensionManager, IRouterState, IRouterStateGetters {
 
     using StringSet for StringSet.Set;
+
+    /*///////////////////////////////////////////////////////////////
+                            Modifier
+    //////////////////////////////////////////////////////////////*/
+
+    modifier onlyAuthorizedCall() {
+        require(isAuthorizedCallToUpgrade(), "ExtensionManager: unauthorized.");
+        _;
+    }
 
     /*///////////////////////////////////////////////////////////////
                             View functions
@@ -46,7 +55,7 @@ contract ExtensionManager is IExtensionManager, IRouterState, IRouterStateGetter
     /**
      *  @notice Add a new extension to the router.
      */
-    function addExtension(Extension memory _extension) external {    
+    function addExtension(Extension memory _extension) external onlyAuthorizedCall {    
         // Check: extension namespace must not already exist.
         // Check: provided extension namespace must not be empty.
         // Check: provided extension implementation must be non-zero.
@@ -70,7 +79,7 @@ contract ExtensionManager is IExtensionManager, IRouterState, IRouterStateGetter
     /**
      *  @notice Fully replace an existing extension of the router.
      */
-    function replaceExtension(Extension memory _extension) external {
+    function replaceExtension(Extension memory _extension) external onlyAuthorizedCall {
         // Check: extension namespace must already exist.
         // Check: provided extension implementation must be non-zero.
         require(_canReplaceExtension(_extension), "ExtensionManager: cannot replace extension.");
@@ -94,7 +103,7 @@ contract ExtensionManager is IExtensionManager, IRouterState, IRouterStateGetter
     /**
      *  @notice Remove an existing extension from the router.
      */
-    function removeExtension(string memory _extensionName) external {
+    function removeExtension(string memory _extensionName) external onlyAuthorizedCall {
         // Check: extension namespace must already exist.
         // Delete: extension namespace.
         require(_canRemoveExtension(_extensionName), "ExtensionManager: cannot remove extension.");
@@ -112,7 +121,7 @@ contract ExtensionManager is IExtensionManager, IRouterState, IRouterStateGetter
     /**
      *  @notice Enables a single function in an existing extension.
      */
-    function enableFunctionInExtension(string memory _extensionName, ExtensionFunction memory _function) external {
+    function enableFunctionInExtension(string memory _extensionName, ExtensionFunction memory _function) external onlyAuthorizedCall {
         // Check: extension namespace must already exist.
         require(_canEnableFunctionInExtension(_extensionName, _function), "ExtensionManager: cannot Store: function for extension.");
         
@@ -129,7 +138,7 @@ contract ExtensionManager is IExtensionManager, IRouterState, IRouterStateGetter
     /**
      *  @notice Disables a single function in an Extension.
      */
-    function disableFunctionInExtension(string memory _extensionName, bytes4 _functionSelector) external {
+    function disableFunctionInExtension(string memory _extensionName, bytes4 _functionSelector) external onlyAuthorizedCall {
         // Check: extension namespace must already exist.
         // Check: function must be mapped to provided extension.
         require(_canDisableFunctionInExtension(_extensionName, _functionSelector), "ExtensionManager: cannot remove function from extension.");
@@ -284,8 +293,12 @@ contract ExtensionManager is IExtensionManager, IRouterState, IRouterStateGetter
         return true;
     }
 
+    
     /// @dev Returns the ExtensionManager storage.
     function _extensionManagerStorage() internal pure returns (ExtensionManagerStorage.Data storage data) {
         data = ExtensionManagerStorage.data();
     }
+
+    /// @dev To override; returns whether all relevant permission and other checks are met before any upgrade.
+    function isAuthorizedCallToUpgrade() internal view virtual returns (bool);
 }

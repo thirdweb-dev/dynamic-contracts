@@ -7,7 +7,7 @@ import "../core/Router.sol";
 import "./ExtensionManager.sol";
 import "./DefaultExtensionSet.sol";
 
-contract BaseRouterWithDefaults is Router, ExtensionManager {
+abstract contract BaseRouterWithDefaults is Router, ExtensionManager {
 
     using StringSet for StringSet.Set;
 

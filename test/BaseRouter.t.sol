@@ -9,6 +9,13 @@ import "src/interface/IExtension.sol";
 import "src/presets/BaseRouter.sol";
 import "./utils/MockContracts.sol";
 
+contract CustomRouter is BaseRouter {
+    /// @dev Returns whether a function can be disabled in an extension in the given execution context.
+    function isAuthorizedCallToUpgrade() internal view virtual override returns (bool) {
+        return true;
+    }
+}
+
 contract BaseRouterTest is Test, IExtension {
 
     BaseRouter internal router;
@@ -16,7 +23,7 @@ contract BaseRouterTest is Test, IExtension {
     function setUp() public virtual {
 
         // Deploy BaseRouter
-        router = new BaseRouter();
+        router = BaseRouter(payable(address(new CustomRouter())));
     }
 
     /*///////////////////////////////////////////////////////////////
