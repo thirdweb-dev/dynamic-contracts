@@ -17,7 +17,7 @@ contract RouterImmutable is BaseRouterWithDefaults {
                             Overrides
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Returns whether a function can be disabled in an extension in the given execution context.
+    /// @dev Returns whether all relevant permission and other checks are met before any upgrade.
     function isAuthorizedCallToUpgrade() internal view virtual override returns (bool) {
         return false;
     }

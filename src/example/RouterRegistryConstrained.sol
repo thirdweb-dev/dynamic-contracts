@@ -3,7 +3,7 @@
 
 pragma solidity ^0.8.0;
 
-import "../presets/BaseRouterWithDefaults.sol";
+import "../presets/BaseRouter.sol";
 
 /**
  *  This smart contract is an EXAMPLE, and is not meant for use in production.
@@ -26,18 +26,18 @@ contract ExtensionRegistry {
 /**
  *  This smart contract is an EXAMPLE, and is not meant for use in production.
  */
-contract RouterRegistryConstrained is BaseRouterWithDefaults {
+contract RouterRegistryConstrained is BaseRouter {
 
     address public admin;
     ExtensionRegistry public registry;
 
-    // @dev Cannot initialize with extensions before registry is set, so we pass empty array to base constructor.
-    constructor(address _registry) BaseRouterWithDefaults(new Extension[](0)) {
+    /// @dev Cannot initialize with extensions before registry is set, so we pass empty array to base constructor.
+    constructor(address _registry) {
         admin = msg.sender;
         registry = ExtensionRegistry(_registry);
     }
 
-    // @dev Sets the admin address.
+    /// @dev Sets the admin address.
     function setAdmin(address _admin) external {
         require(msg.sender == admin, "RouterUpgradeable: Only admin can set a new admin");
         admin = _admin;
@@ -47,7 +47,7 @@ contract RouterRegistryConstrained is BaseRouterWithDefaults {
                             Overrides
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Returns whether a function can be disabled in an extension in the given execution context.
+    /// @dev Returns whether all relevant permission and other checks are met before any upgrade.
     function isAuthorizedCallToUpgrade() internal view virtual override returns (bool) {
         return msg.sender == admin;
     }

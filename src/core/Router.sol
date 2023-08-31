@@ -1,14 +1,20 @@
 // SPDX-License-Identifier: MIT
-// @author: thirdweb (https://github.com/thirdweb-dev/dynamic-contracts)
-
 pragma solidity ^0.8.0;
 
 import "../interface/IRouter.sol";
 
+/// @title ERC-7504 Dynamic Contracts: Router.
+/// @author thirdweb (https://github.com/thirdweb-dev/dynamic-contracts)
+/// @notice Routes an incoming call to an appropriate implementation address.
+
 abstract contract Router is IRouter {
 
+    /**
+	 *	@notice delegateCalls the appropriate implementation address for the given incoming function call.
+	 *	@dev The implementation address to delegateCall MUST be retrieved from calling `getImplementationForFunction` with the
+     *       incoming call's function selector.
+	 */
     fallback() external payable virtual {
-    /// @dev delegate calls the appropriate implementation smart contract for a given function.
         address implementation = getImplementationForFunction(msg.sig);
         require(implementation != address(0), "Router: function does not exist.");
         _delegate(implementation);
@@ -40,6 +46,10 @@ abstract contract Router is IRouter {
         }
     }
 
-    /// @dev Returns the implementation contract address for a given function signature.
-    function getImplementationForFunction(bytes4 _functionSelector) public view virtual returns (address);
+    /**
+	 *	@notice Returns the implementation address to delegateCall for the given function selector.
+	 *	@param _functionSelector The function selector to get the implementation address for.
+	 *	@return implementation The implementation address to delegateCall for the given function selector.
+	 */
+    function getImplementationForFunction(bytes4 _functionSelector) public view virtual returns (address implementation);
 }

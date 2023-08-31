@@ -1,6 +1,4 @@
-// SPDX-License-Identifier: Apache 2.0
-// @author: thirdweb (https://github.com/thirdweb-dev/dynamic-contracts)
-
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 library StringSet {

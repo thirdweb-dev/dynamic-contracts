@@ -1,19 +1,21 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity ^0.8.0;
 
 import "./IExtension.sol";
 
-/**
- *	@title ERC-7504 Dynamic Contracts.
- *	NOTE: The ERC-165 identifier for this interface is 0x4a00cc48.
- */
+/// @title ERC-7504 Dynamic Contracts: IRouterState.
+/// @author thirdweb (https://github.com/thirdweb-dev/dynamic-contracts)
+/// @notice Defines an API to expose a router's extensions.
+
 interface IRouterState is IExtension {
 
     /*///////////////////////////////////////////////////////////////
                             View Functions
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Returns all extensions of the Router.
+    /**
+     *  @notice Returns all extensions of the Router.
+     *  @return allExtensions An array of all extensions.
+     */
     function getAllExtensions() external view returns (Extension[] memory allExtensions);
 }
