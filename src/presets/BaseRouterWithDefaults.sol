@@ -3,158 +3,151 @@
 
 pragma solidity ^0.8.0;
 
-// Interface
-import "../interface/IBaseRouter.sol";
-
-// Core
 import "../core/Router.sol";
+import "./ExtensionManager.sol";
+import "./DefaultExtensionSet.sol";
 
-// Utils
-import "./utils/StringSet.sol";
-import "./utils/DefaultExtensionSet.sol";
-import "./utils/ExtensionState.sol";
+abstract contract BaseRouterWithDefaults is Router, ExtensionManager {
 
-abstract contract BaseRouterWithDefaults is IBaseRouter, Router, ExtensionState {
     using StringSet for StringSet.Set;
 
-    /*///////////////////////////////////////////////////////////////
-                            State variables
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice The DefaultExtensionSet that stores default extensions of the router.
-    address public immutable defaultExtensionSet;
-
-    /*///////////////////////////////////////////////////////////////
-                                Constructor
-    //////////////////////////////////////////////////////////////*/
+    address public immutable defaultExtensions;
 
     constructor(Extension[] memory _extensions) {
-
-        DefaultExtensionSet map = new DefaultExtensionSet();
-        defaultExtensionSet = address(map);
-
-        uint256 len = _extensions.length;
-
-        for (uint256 i = 0; i < len; i += 1) {
-            map.setExtension(_extensions[i]);
-        }
+        defaultExtensions = address(new DefaultExtensionSet(_extensions));
     }
 
     /*///////////////////////////////////////////////////////////////
-                            ERC 165 logic
+                        Overriden view functions
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev See {IERC165-supportsInterface}.
-    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
-        return interfaceId == type(IBaseRouter).interfaceId || super.supportsInterface(interfaceId);
-    }
 
-    /*///////////////////////////////////////////////////////////////
-                        External functions
-    //////////////////////////////////////////////////////////////*/
+    /// @notice Returns all extensions of the Router.
+    function getAllExtensions() external view override returns (Extension[] memory allExtensions) {
 
-    /// @dev Adds a new extension to the router.
-    function addExtension(Extension memory _extension) external {
-        require(_canSetExtension(_extension), "BaseRouter: not authorized.");
+        Extension[] memory defaults = IRouterState(defaultExtensions).getAllExtensions();
+        string[] memory names = _extensionManagerStorage().extensionNames.values();
 
-        _addExtension(_extension);
-    }
-
-    /// @dev Updates an existing extension in the router, or overrides a default extension.
-    function updateExtension(Extension memory _extension) external {
-        require(_canSetExtension(_extension), "BaseRouter: not authorized.");
-
-        _updateExtension(_extension);
-    }
-
-    /// @dev Removes an existing extension from the router.
-    function removeExtension(Extension memory _extension) external {
-        require(_canSetExtension(_extension), "BaseRouter: not authorized.");
-
-        _removeExtension(_extension.metadata.name);
-    }
-
-    /*///////////////////////////////////////////////////////////////
-                            View functions
-    //////////////////////////////////////////////////////////////*/
-
-    /**
-     *  @notice Returns all extensions stored. Override default lugins stored in router are
-     *          given precedence over default extensions in DefaultExtensionSet.
-     */
-    function getAllExtensions() external view returns (Extension[] memory allExtensions) {
-        Extension[] memory defaultExtensions = IDefaultExtensionSet(defaultExtensionSet).getAllExtensions();
-        uint256 defaultExtensionsLen = defaultExtensions.length;
-
-        string[] memory names = _extensionStateStorage().extensionNames.values();
-        uint256 namesLen = names.length;
-
+        uint256 total = defaults.length + names.length;
         uint256 overrides = 0;
-        for (uint256 i = 0; i < defaultExtensionsLen; i += 1) {
-            if (_extensionStateStorage().extensionNames.contains(defaultExtensions[i].metadata.name)) {
+
+        // Count number of overrides.
+        for(uint256 i = 0; i < defaults.length; i += 1) {
+            if (_extensionManagerStorage().extensionNames.contains(defaults[i].metadata.name)) {
                 overrides += 1;
             }
         }
-
-        uint256 total = (namesLen + defaultExtensionsLen) - overrides;
-
-        allExtensions = new Extension[](total);
+        
+        allExtensions = new Extension[](total - overrides);
         uint256 idx = 0;
 
-        for (uint256 i = 0; i < defaultExtensionsLen; i += 1) {
-            string memory name = defaultExtensions[i].metadata.name;
-            if (!_extensionStateStorage().extensionNames.contains(name)) {
-                allExtensions[idx] = defaultExtensions[i];
+        // Travers defaults and non defaults in same loop.
+        for(uint256 j = 0; j < total; j += 1) {
+            if(j < defaults.length) {
+                if (!_extensionManagerStorage().extensionNames.contains(defaults[j].metadata.name)) {
+                    allExtensions[idx] = defaults[j];
+                    idx += 1;
+                }
+            } else {
+                allExtensions[idx] = _getExtension(names[j - defaults.length]);
                 idx += 1;
             }
         }
+    }
 
-        for (uint256 i = 0; i < namesLen; i += 1) {
-            allExtensions[idx] = _extensionStateStorage().extensions[names[i]];
-            idx += 1;
+    /// @notice Returns the extension metadata for a given function.
+    function getMetadataForFunction(bytes4 _functionSelector) public view override returns (ExtensionMetadata memory) {
+        ExtensionMetadata memory defaultMetadata = IRouterStateGetters(defaultExtensions).getMetadataForFunction(_functionSelector);
+        ExtensionMetadata memory nonDefaultMetadata = _extensionManagerStorage().extensionMetadata[_functionSelector];
+        
+        return nonDefaultMetadata.implementation != address(0) ? nonDefaultMetadata : defaultMetadata;
+    }
+
+    /// @notice Returns the extension metadata and functions for a given extension.
+    function getExtension(string memory extensionName) public view override returns (Extension memory) {
+        Extension memory defaultExt = IRouterStateGetters(defaultExtensions).getExtension(extensionName);
+        Extension memory nonDefaultExt = _extensionManagerStorage().extensions[extensionName];
+        
+        return bytes(nonDefaultExt.metadata.name).length > 0 ? nonDefaultExt : defaultExt;
+    }
+
+    /// @notice Returns the implementation contract address for a given function signature.
+    function getImplementationForFunction(bytes4 _functionSelector) public view virtual override returns (address) {
+
+        ExtensionMetadata memory defaultMetadata = IRouterStateGetters(defaultExtensions).getMetadataForFunction(_functionSelector);
+        ExtensionMetadata memory nonDefaultMetadata = _extensionManagerStorage().extensionMetadata[_functionSelector];
+
+        if(bytes(nonDefaultMetadata.name).length > 0) {
+            // Function exists in some non default extension.
+
+            return nonDefaultMetadata.implementation;
         }
-    }
 
-    /// @dev Returns the extension metadata and functions for a given extension.
-    function getExtension(string memory _extensionName) public view returns (Extension memory) {
-        bool isLocalExtension = _extensionStateStorage().extensionNames.contains(_extensionName);
+        if(bytes(defaultMetadata.name).length > 0) {
+            // Function exists in some default extension.
 
-        return isLocalExtension ? _extensionStateStorage().extensions[_extensionName] : IDefaultExtensionSet(defaultExtensionSet).getExtension(_extensionName);
-    }
+            if(_extensionManagerStorage().extensionNames.contains(defaultMetadata.name)) {
+                // Function exists in a replaced default extension.
 
-    /// @dev Returns the extension's implementation smart contract address.
-    function getExtensionImplementation(string memory _extensionName) external view returns (address) {
-        return getExtension(_extensionName).metadata.implementation;
-    }
+                return nonDefaultMetadata.implementation;
+            }
 
-    /// @dev Returns all functions that belong to the given extension contract.
-    function getAllFunctionsOfExtension(string memory _extensionName) external view returns (ExtensionFunction[] memory) {
-        return getExtension(_extensionName).functions;
-    }
+            return defaultMetadata.implementation;
+        }
 
-    /// @dev Returns the extension metadata for a given function.
-    function getExtensionForFunction(bytes4 _functionSelector) public view returns (ExtensionMetadata memory) {
-        ExtensionMetadata memory metadata = _extensionStateStorage().extensionMetadata[_functionSelector];
-
-        bool isLocalExtension = metadata.implementation != address(0);
-
-        return isLocalExtension ? metadata : IDefaultExtensionSet(defaultExtensionSet).getExtensionForFunction(_functionSelector);
-    }
-
-    /// @dev Returns the extension implementation address stored in router, for the given function.
-    function getImplementationForFunction(bytes4 _functionSelector)
-        public
-        view
-        override
-        returns (address extensionAddress)
-    {
-        return getExtensionForFunction(_functionSelector).implementation;
+        return address(0);
     }
 
     /*///////////////////////////////////////////////////////////////
-                        Internal functions
+                        Overriden internal functions
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Returns whether a extension can be set in the given execution context.
-    function _canSetExtension(Extension memory _extension) internal view virtual returns (bool);
+    /// @dev Enables a function in an Extension.
+    function _enableFunctionInExtension(string memory _extensionName, ExtensionFunction memory _extFunction) internal virtual override {
+
+        // Ensure that the function is not already implemented as part of a default extension different from 
+        // the targeted `_extensionName` non-default extension.
+        string memory name = IRouterStateGetters(defaultExtensions).getMetadataForFunction(_extFunction.functionSelector).name;
+        bytes32 fnHash = keccak256(abi.encode(name));
+        require(
+            // Check: whether function is already implemented as part of some default extensions.
+            bytes(name).length == 0 || fnHash == keccak256(abi.encode(_extensionName)),
+            "ExtensionManager: fn implemented in default extension."
+        );
+
+        super._enableFunctionInExtension(_extensionName, _extFunction);
+    }
+
+    /// @dev Returns whether a new extension can be added in the given execution context.
+    function _canAddExtension(Extension memory _extension) internal virtual override returns (bool) {
+
+        // Check: extension namespace is not already in use as a default.
+        string memory name = _extension.metadata.name;
+        require(
+            bytes(IRouterStateGetters(defaultExtensions).getExtension(name).metadata.name).length == 0,
+            "BaseRouterWithDefaults: re-adding a default extension."
+        );
+
+        return super._canAddExtension(_extension);
+    }
+
+    /// @dev Returns whether an extension can be replaced in the given execution context.
+    function _canReplaceExtension(Extension memory _extension) internal virtual override returns (bool) {
+        // Check: extension namespace must already exist -- as default, or in router.
+        string memory name = _extension.metadata.name;
+        bool isDefault = bytes(IRouterStateGetters(defaultExtensions).getExtension(name).metadata.name).length > 0;
+        bool isAddedAsNonDefault = _extensionManagerStorage().extensionNames.contains(name);
+
+        require(isDefault || isAddedAsNonDefault, "ExtensionManager: extension does not exist.");
+
+        if(!isAddedAsNonDefault) {
+            // Store: extension name in non-default set.
+            _extensionManagerStorage().extensionNames.add(name);
+        }
+
+        // Check: extension implementation must be non-zero.
+        require(_extension.metadata.implementation != address(0), "ExtensionManager: adding extension without implementation.");
+
+        return true;
+    }
 }

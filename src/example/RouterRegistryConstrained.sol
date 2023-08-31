@@ -3,7 +3,7 @@
 
 pragma solidity ^0.8.0;
 
-import "../BaseRouterWithDefaults.sol";
+import "../presets/BaseRouterWithDefaults.sol";
 
 /**
  *  This smart contract is an EXAMPLE, and is not meant for use in production.
@@ -47,8 +47,18 @@ contract RouterRegistryConstrained is BaseRouterWithDefaults {
                             Overrides
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Returns whether extensions can be set in the given execution context.
-    function _canSetExtension(Extension memory _extension) internal view virtual override returns (bool) {
-        return msg.sender == admin && registry.isRegistered(_extension.metadata.implementation);
+    /// @dev Returns whether a function can be disabled in an extension in the given execution context.
+    function isAuthorizedCallToUpgrade() internal view virtual override returns (bool) {
+        return msg.sender == admin;
+    }
+
+    /// @dev Returns whether a new extension can be added in the given execution context.
+    function _canAddExtension(Extension memory _extension) internal virtual override returns (bool) {
+        return super._canAddExtension(_extension) && registry.isRegistered(_extension.metadata.implementation);
+    }
+
+    /// @dev Returns whether an extension can be replaced in the given execution context.
+    function _canReplaceExtension(Extension memory _extension) internal virtual override returns (bool) {
+        return super._canReplaceExtension(_extension) && registry.isRegistered(_extension.metadata.implementation);
     }
 }

@@ -3,7 +3,7 @@
 
 pragma solidity ^0.8.0;
 
-import "../BaseRouter.sol";
+import "../presets/BaseRouter.sol";
 
 /**
  *  This smart contract is an EXAMPLE, and is not meant for use in production.
@@ -26,8 +26,8 @@ contract RouterUpgradeable is BaseRouter {
                             Overrides
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Returns whether extensions can be set in the given execution context.
-    function _canSetExtension(Extension memory) internal view virtual override returns (bool) {
+    /// @dev Returns whether a function can be disabled in an extension in the given execution context.
+    function isAuthorizedCallToUpgrade() internal view virtual override returns (bool) {
         return msg.sender == admin;
     }
 }
