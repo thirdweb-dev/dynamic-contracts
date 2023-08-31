@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: MIT
-// @author: thirdweb (https://github.com/thirdweb-dev/dynamic-contracts)
-
 pragma solidity ^0.8.0;
 
 import "./StringSet.sol";
 import "../interface/IExtension.sol";
+
+/// @title IExtensionManagerStorage
+/// @author thirdweb (https://github.com/thirdweb-dev/dynamic-contracts)
+/// @notice Defined storage for managing a router's extensions.
 
 library ExtensionManagerStorage {
 
@@ -12,7 +14,7 @@ library ExtensionManagerStorage {
     bytes32 public constant EXTENSION_MANAGER_STORAGE_POSITION = keccak256(abi.encode(uint256(keccak256("extension.manager.storage")) - 1));
 
     struct Data {
-        /// @dev Set of names of all extensions stored.
+        /// @dev Set of names of all extensions of the router.
         StringSet.Set extensionNames;
         /// @dev Mapping from extension name => `Extension` i.e. extension metadata and functions.
         mapping(string => IExtension.Extension) extensions;
@@ -20,6 +22,7 @@ library ExtensionManagerStorage {
         mapping(bytes4 => IExtension.ExtensionMetadata) extensionMetadata;
     }
 
+    /// @dev Returns access to the extension manager's storage.
     function data() internal pure returns (Data storage data_) {
         bytes32 position = EXTENSION_MANAGER_STORAGE_POSITION;
         assembly {

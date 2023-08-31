@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: MIT
-// @author: thirdweb (https://github.com/thirdweb-dev/dynamic-contracts)
-
 pragma solidity ^0.8.0;
 
 import "../interface/IExtensionManager.sol";
 import "../interface/IRouterState.sol";
 import "../interface/IRouterStateGetters.sol";
 import "../lib/ExtensionManagerStorage.sol";
+
+/// @title ExtensionManager
+/// @author thirdweb (https://github.com/thirdweb-dev/dynamic-contracts)
+/// @notice Defined storage and API for managing a router's extensions.
 
 abstract contract ExtensionManager is IExtensionManager, IRouterState, IRouterStateGetters {
 
@@ -16,6 +18,7 @@ abstract contract ExtensionManager is IExtensionManager, IRouterState, IRouterSt
                             Modifier
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Checks that a call to any external function is authorized.
     modifier onlyAuthorizedCall() {
         require(isAuthorizedCallToUpgrade(), "ExtensionManager: unauthorized.");
         _;
@@ -25,7 +28,10 @@ abstract contract ExtensionManager is IExtensionManager, IRouterState, IRouterSt
                             View functions
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Returns all extensions of the Router.
+    /**
+     *  @notice Returns all extensions of the Router.
+     *  @return allExtensions An array of all extensions.
+     */
     function getAllExtensions() external view virtual override returns (Extension[] memory allExtensions) {
 
         string[] memory names = _extensionManagerStorage().extensionNames.values();
@@ -38,12 +44,20 @@ abstract contract ExtensionManager is IExtensionManager, IRouterState, IRouterSt
         }
     }
 
-    /// @dev Returns the extension metadata for a given function.
+    /**
+     *  @notice Returns the extension metadata for a given function.
+     *  @param functionSelector The function selector to get the extension metadata for.
+     *  @return metadata The extension metadata for a given function.
+     */
     function getMetadataForFunction(bytes4 functionSelector) public view virtual returns (ExtensionMetadata memory) {
         return _extensionManagerStorage().extensionMetadata[functionSelector];
     }
 
-    /// @dev Returns the extension metadata and functions for a given extension.
+    /**
+     *  @notice Returns the extension metadata and functions for a given extension.
+     *  @param extensionName The name of the extension to get the metadata and functions for.
+     *  @return extension The extension metadata and functions for a given extension.
+     */
     function getExtension(string memory extensionName) public view virtual returns (Extension memory) {
         return _getExtension(extensionName);
     }
@@ -54,6 +68,7 @@ abstract contract ExtensionManager is IExtensionManager, IRouterState, IRouterSt
 
     /**
      *  @notice Add a new extension to the router.
+     *  @param _extension The extension to add.
      */
     function addExtension(Extension memory _extension) external onlyAuthorizedCall {    
         // Check: extension namespace must not already exist.
@@ -78,6 +93,8 @@ abstract contract ExtensionManager is IExtensionManager, IRouterState, IRouterSt
 
     /**
      *  @notice Fully replace an existing extension of the router.
+     *  @dev The extension with name `extension.name` is the extension being replaced.
+     *  @param _extension The extension to replace or overwrite.
      */
     function replaceExtension(Extension memory _extension) external onlyAuthorizedCall {
         // Check: extension namespace must already exist.
@@ -102,6 +119,7 @@ abstract contract ExtensionManager is IExtensionManager, IRouterState, IRouterSt
 
     /**
      *  @notice Remove an existing extension from the router.
+     *  @param _extensionName The name of the extension to remove.
      */
     function removeExtension(string memory _extensionName) external onlyAuthorizedCall {
         // Check: extension namespace must already exist.
@@ -120,6 +138,10 @@ abstract contract ExtensionManager is IExtensionManager, IRouterState, IRouterSt
 
     /**
      *  @notice Enables a single function in an existing extension.
+     *  @dev Makes the given function callable on the router.
+     *
+     *  @param _extensionName The name of the extension to which `extFunction` belongs.
+     *  @param _function The function to enable.
      */
     function enableFunctionInExtension(string memory _extensionName, ExtensionFunction memory _function) external onlyAuthorizedCall {
         // Check: extension namespace must already exist.
@@ -132,11 +154,14 @@ abstract contract ExtensionManager is IExtensionManager, IRouterState, IRouterSt
         // 2. Store: metadata for function.
         _setMetadataForFunction(_function.functionSelector, metadata);
 
-        emit FunctionAdded(_extensionName, _function.functionSelector, _function, metadata);
+        emit FunctionEnabled(_extensionName, _function.functionSelector, _function, metadata);
     }
 
     /**
      *  @notice Disables a single function in an Extension.
+     *
+     *  @param _extensionName The name of the extension to which the function of `functionSelector` belongs.
+     *  @param _functionSelector The function to disable.
      */
     function disableFunctionInExtension(string memory _extensionName, bytes4 _functionSelector) external onlyAuthorizedCall {
         // Check: extension namespace must already exist.
@@ -150,7 +175,7 @@ abstract contract ExtensionManager is IExtensionManager, IRouterState, IRouterSt
         // 2. Delete: metadata for function.
         _deleteMetadataForFunction(_functionSelector);
 
-        emit FunctionRemoved(_extensionName, _functionSelector, extMetadata);
+        emit FunctionDisabled(_extensionName, _functionSelector, extMetadata);
     }
     
     /*///////////////////////////////////////////////////////////////

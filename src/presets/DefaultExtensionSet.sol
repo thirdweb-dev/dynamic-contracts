@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: MIT
-// @author: thirdweb (https://github.com/thirdweb-dev/dynamic-contracts)
-
 pragma solidity ^0.8.0;
 
 import "../interface/IRouterState.sol";
 import "../interface/IRouterStateGetters.sol";
 import "../lib/ExtensionManagerStorage.sol";
 import "../lib/StringSet.sol";
+
+/// @title DefaultExtensionSet
+/// @author thirdweb (https://github.com/thirdweb-dev/dynamic-contracts)
+/// @notice A static router initialized with a set of extensions on deployment. Serves as a default extension set for Routers.
 
 contract DefaultExtensionSet is IRouterState, IRouterStateGetters {
 
@@ -16,6 +18,7 @@ contract DefaultExtensionSet is IRouterState, IRouterStateGetters {
                             Constructor
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Initializes the DefaultExtensionSet with a set of extensions. Serves as a default extension set for Routers.
     constructor(Extension[] memory _extensions) {
         uint256 len = _extensions.length;
         for (uint256 i = 0; i < len; i += 1) {
@@ -27,7 +30,10 @@ contract DefaultExtensionSet is IRouterState, IRouterStateGetters {
                             View functions
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Returns all extensions of the Router.
+    /**
+     *  @notice Returns all extensions of the Router.
+     *  @return allExtensions An array of all extensions.
+     */
     function getAllExtensions() external view override returns (Extension[] memory allExtensions) {
 
         string[] memory names = _extensionManagerStorage().extensionNames.values();
@@ -40,12 +46,20 @@ contract DefaultExtensionSet is IRouterState, IRouterStateGetters {
         }
     }
 
-    /// @dev Returns the extension metadata for a given function.
+    /**
+     *  @notice Returns the extension metadata for a given function.
+     *  @param functionSelector The function selector to get the extension metadata for.
+     *  @return metadata The extension metadata for a given function.
+     */
     function getMetadataForFunction(bytes4 functionSelector) public view returns (ExtensionMetadata memory) {
         return _extensionManagerStorage().extensionMetadata[functionSelector];
     }
 
-    /// @dev Returns the extension metadata and functions for a given extension.
+    /**
+     *  @notice Returns the extension metadata and functions for a given extension.
+     *  @param extensionName The name of the extension to get the metadata and functions for.
+     *  @return extension The extension metadata and functions for a given extension.
+     */
     function getExtension(string memory extensionName) public view returns (Extension memory) {
         return _getExtension(extensionName);
     }

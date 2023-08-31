@@ -1,18 +1,22 @@
 // SPDX-License-Identifier: MIT
-// @author: thirdweb (https://github.com/thirdweb-dev/dynamic-contracts)
-
 pragma solidity ^0.8.0;
 
 import "../core/Router.sol";
 import "./ExtensionManager.sol";
 import "./DefaultExtensionSet.sol";
 
+/// @title BaseRouterWithDefaults
+/// @author thirdweb (https://github.com/thirdweb-dev/dynamic-contracts)
+/// @notice A preset Router + ExtensionManager that can be initialized with a set of default extensions on deployment.
+
 abstract contract BaseRouterWithDefaults is Router, ExtensionManager {
 
     using StringSet for StringSet.Set;
 
+    /// @notice The address where the router's default extension set is stored.
     address public immutable defaultExtensions;
-
+    
+    /// @notice Initialize the Router with a set of default extensions.
     constructor(Extension[] memory _extensions) {
         defaultExtensions = address(new DefaultExtensionSet(_extensions));
     }
@@ -22,7 +26,10 @@ abstract contract BaseRouterWithDefaults is Router, ExtensionManager {
     //////////////////////////////////////////////////////////////*/
 
 
-    /// @notice Returns all extensions of the Router.
+    /**
+     *  @notice Returns all extensions of the Router.
+     *  @return allExtensions An array of all extensions.
+     */
     function getAllExtensions() external view override returns (Extension[] memory allExtensions) {
 
         Extension[] memory defaults = IRouterState(defaultExtensions).getAllExtensions();
@@ -55,7 +62,11 @@ abstract contract BaseRouterWithDefaults is Router, ExtensionManager {
         }
     }
 
-    /// @notice Returns the extension metadata for a given function.
+    /**
+     *  @notice Returns the extension metadata for a given function.
+     *  @param _functionSelector The function selector to get the extension metadata for.
+     *  @return metadata The extension metadata for a given function.
+     */
     function getMetadataForFunction(bytes4 _functionSelector) public view override returns (ExtensionMetadata memory) {
         ExtensionMetadata memory defaultMetadata = IRouterStateGetters(defaultExtensions).getMetadataForFunction(_functionSelector);
         ExtensionMetadata memory nonDefaultMetadata = _extensionManagerStorage().extensionMetadata[_functionSelector];
@@ -63,7 +74,11 @@ abstract contract BaseRouterWithDefaults is Router, ExtensionManager {
         return nonDefaultMetadata.implementation != address(0) ? nonDefaultMetadata : defaultMetadata;
     }
 
-    /// @notice Returns the extension metadata and functions for a given extension.
+    /**
+     *  @notice Returns the extension metadata and functions for a given extension.
+     *  @param extensionName The name of the extension to get the metadata and functions for.
+     *  @return extension The extension metadata and functions for a given extension.
+     */
     function getExtension(string memory extensionName) public view override returns (Extension memory) {
         Extension memory defaultExt = IRouterStateGetters(defaultExtensions).getExtension(extensionName);
         Extension memory nonDefaultExt = _extensionManagerStorage().extensions[extensionName];
@@ -102,7 +117,7 @@ abstract contract BaseRouterWithDefaults is Router, ExtensionManager {
                         Overriden internal functions
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Enables a function in an Extension.
+    /// @dev Enables a function in an Extension i.e. makes the function callable
     function _enableFunctionInExtension(string memory _extensionName, ExtensionFunction memory _extFunction) internal virtual override {
 
         // Ensure that the function is not already implemented as part of a default extension different from 

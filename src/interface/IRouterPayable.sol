@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: MIT
-// @author: thirdweb (https://github.com/thirdweb-dev/dynamic-contracts)
-
 pragma solidity ^0.8.0;
 
 import "./IRouter.sol";
 
-/// @dev See {IRouter}.
+/// @title IRouterPayable.
+/// @author thirdweb (https://github.com/thirdweb-dev/dynamic-contracts)
+/// @notice A Router with `receive` as a fixed function.
+
 interface IRouterPayable is IRouter {
+    /// @notice Lets a contract receive native tokens.
     receive() external payable;
 }
