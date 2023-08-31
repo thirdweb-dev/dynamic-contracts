@@ -1434,7 +1434,7 @@ contract BaseRouterWithDefaultsTest is Test, IExtension {
     //////////////////////////////////////////////////////////////*/
 
     // @note add a function to an extension where the function already exists in a default extension.
-    function test_revert_addFunctionToExtension_functionAlreadyExistsInDefault() public {
+    function test_revert_enableFunctionInExtension_functionAlreadyExistsInDefault() public {
         // Create Extension struct
         Extension memory extension;
         
@@ -1465,22 +1465,22 @@ contract BaseRouterWithDefaultsTest is Test, IExtension {
             "multiplyNumber(uint256)"
         );
         vm.expectRevert("ExtensionManager: fn implemented in default extension.");
-        router.addFunctionToExtension(extension.metadata.name, fn);
+        router.enableFunctionInExtension(extension.metadata.name, fn);
     }
 
     // @note add a function to a default extension.
-    function test_revert_addFunctionToExtension_defaultExtension() public {
+    function test_revert_enableFunctionInExtension_defaultExtension() public {
         // Add function to extension
         ExtensionFunction memory fn = ExtensionFunction(
             IncrementDecrementGet.getNumber.selector,
             "getNumber()"
         );
         vm.expectRevert("ExtensionManager: extension does not exist.");
-        router.addFunctionToExtension(defaultExtension1.metadata.name, fn);
+        router.enableFunctionInExtension(defaultExtension1.metadata.name, fn);
     }
 
     // @note: add a new function to an existing extension.
-    function test_state_addFunctionToExtension() public {
+    function test_state_enableFunctionInExtension() public {
         // Create Extension struct
         Extension memory extension;
         
@@ -1509,12 +1509,12 @@ contract BaseRouterWithDefaultsTest is Test, IExtension {
         assertEq(router.getImplementationForFunction(IncrementDecrementGet.getNumber.selector), address(0));
         assertEq(router.getExtension(extension.metadata.name).functions.length, 2);
 
-        // Call: addFunctionToExtension
+        // Call: enableFunctionInExtension
         ExtensionFunction memory fn = ExtensionFunction(
             IncrementDecrementGet.getNumber.selector,
             "getNumber()"
         );
-        router.addFunctionToExtension(extension.metadata.name, fn);
+        router.enableFunctionInExtension(extension.metadata.name, fn);
 
         // Post call checks
         assertEq(router.getImplementationForFunction(IncrementDecrementGet.getNumber.selector), extension.metadata.implementation);
@@ -1545,7 +1545,7 @@ contract BaseRouterWithDefaultsTest is Test, IExtension {
     }
 
     // @note add a receive function to an extension
-    function test_state_addFunctionToExtension_receiveFunction() public {
+    function test_state_enableFunctionInExtension_receiveFunction() public {
         // Create Extension struct
         Extension memory extension;
         
@@ -1581,12 +1581,12 @@ contract BaseRouterWithDefaultsTest is Test, IExtension {
         vm.prank(sender);
         address(router).call{value: 1 ether}("");
 
-        // Call: addFunctionToExtension
+        // Call: enableFunctionInExtension
         ExtensionFunction memory fn = ExtensionFunction(
             bytes4(0),
             "receive()"
         );
-        router.addFunctionToExtension(extension.metadata.name, fn);
+        router.enableFunctionInExtension(extension.metadata.name, fn);
 
         // Post call checks
         assertEq(router.getImplementationForFunction(bytes4(0)), extension.metadata.implementation);
@@ -1612,19 +1612,19 @@ contract BaseRouterWithDefaultsTest is Test, IExtension {
     }
 
     // @note add a function to an extension that does not exist.
-    function test_revert_addFunctionToExtension_extensionDoesNotExist() public {
-        // Call: addFunctionToExtension
+    function test_revert_enableFunctionInExtension_extensionDoesNotExist() public {
+        // Call: enableFunctionInExtension
         ExtensionFunction memory fn = ExtensionFunction(
             IncrementDecrementGet.getNumber.selector,
             "getNumber()"
         );
 
         vm.expectRevert("ExtensionManager: extension does not exist.");
-        router.addFunctionToExtension("SomeExtension", fn);
+        router.enableFunctionInExtension("SomeExtension", fn);
     }
 
     // @note add a function to an extension which already has the function.
-    function test_revert_addFunctionToExtension_functionAlreadyExistsInExtension() public {
+    function test_revert_enableFunctionInExtension_functionAlreadyExistsInExtension() public {
         // Create Extension struct
         Extension memory extension;
         
@@ -1653,14 +1653,14 @@ contract BaseRouterWithDefaultsTest is Test, IExtension {
         assertEq(router.getImplementationForFunction(IncrementDecrementGet.getNumber.selector), address(0));
         assertEq(router.getExtension(extension.metadata.name).functions.length, 2);
 
-        // Call: addFunctionToExtension
+        // Call: enableFunctionInExtension
         ExtensionFunction memory fn = extension.functions[0];
         vm.expectRevert("ExtensionManager: function impl already exists.");
-        router.addFunctionToExtension(extension.metadata.name, fn);
+        router.enableFunctionInExtension(extension.metadata.name, fn);
     }
 
     // @note add a function to an extension, but another extension already has that function.
-    function test_revert_addFunctionToExtension_functionAlreadyExistsInAnotherExtension() public {
+    function test_revert_enableFunctionInExtension_functionAlreadyExistsInAnotherExtension() public {
         // Create Extension struct
         Extension memory extension1;
         Extension memory extension2;
@@ -1695,18 +1695,18 @@ contract BaseRouterWithDefaultsTest is Test, IExtension {
         router.addExtension(extension1);
         router.addExtension(extension2);
 
-        // Call: addFunctionToExtension
+        // Call: enableFunctionInExtension
         ExtensionFunction memory fn = ExtensionFunction(
             IncrementDecrementGet.getNumber.selector,
             "getNumber()"
         );
 
         vm.expectRevert("ExtensionManager: function impl already exists.");
-        router.addFunctionToExtension(extension1.metadata.name, fn);
+        router.enableFunctionInExtension(extension1.metadata.name, fn);
     }
 
     // @note add a function to an extension with an empty function signature.
-    function test_revert_addFunctionToExtension_emptyFunctionSignature() public {
+    function test_revert_enableFunctionInExtension_emptyFunctionSignature() public {
         // Create Extension struct
         Extension memory extension;
         
@@ -1735,18 +1735,18 @@ contract BaseRouterWithDefaultsTest is Test, IExtension {
         assertEq(router.getImplementationForFunction(IncrementDecrementGet.getNumber.selector), address(0));
         assertEq(router.getExtension(extension.metadata.name).functions.length, 2);
 
-        // Call: addFunctionToExtension
+        // Call: enableFunctionInExtension
         ExtensionFunction memory fn = ExtensionFunction(
             IncrementDecrementGet.getNumber.selector,
             ""
         );
 
         vm.expectRevert("ExtensionManager: fn selector and signature mismatch.");
-        router.addFunctionToExtension(extension.metadata.name, fn);
+        router.enableFunctionInExtension(extension.metadata.name, fn);
     }
 
     // @note add a function to an extension with an empty function selector.
-    function test_revert_addFunctionToExtension_emptyFunctionSelector() public {
+    function test_revert_enableFunctionInExtension_emptyFunctionSelector() public {
         // Create Extension struct
         Extension memory extension;
         
@@ -1775,18 +1775,18 @@ contract BaseRouterWithDefaultsTest is Test, IExtension {
         assertEq(router.getImplementationForFunction(IncrementDecrementGet.getNumber.selector), address(0));
         assertEq(router.getExtension(extension.metadata.name).functions.length, 2);
 
-        // Call: addFunctionToExtension
+        // Call: enableFunctionInExtension
         ExtensionFunction memory fn = ExtensionFunction(
             bytes4(0),
             "getNumber()"
         );
 
         vm.expectRevert("ExtensionManager: fn selector and signature mismatch.");
-        router.addFunctionToExtension(extension.metadata.name, fn);
+        router.enableFunctionInExtension(extension.metadata.name, fn);
     }
 
     // @note add a function to an extension with fn selector-signature mismatch.
-    function test_revert_addFunctionToExtension_fnSelectorSignatureMismatch() public {
+    function test_revert_enableFunctionInExtension_fnSelectorSignatureMismatch() public {
         // Create Extension struct
         Extension memory extension;
         
@@ -1815,14 +1815,14 @@ contract BaseRouterWithDefaultsTest is Test, IExtension {
         assertEq(router.getImplementationForFunction(IncrementDecrementGet.getNumber.selector), address(0));
         assertEq(router.getExtension(extension.metadata.name).functions.length, 2);
 
-        // Call: addFunctionToExtension
+        // Call: enableFunctionInExtension
         ExtensionFunction memory fn = ExtensionFunction(
             IncrementDecrementGet.getNumber.selector,
             "incrementNumber()"
         );
 
         vm.expectRevert("ExtensionManager: fn selector and signature mismatch.");
-        router.addFunctionToExtension(extension.metadata.name, fn);
+        router.enableFunctionInExtension(extension.metadata.name, fn);
     }
 
 
@@ -1831,7 +1831,7 @@ contract BaseRouterWithDefaultsTest is Test, IExtension {
     //////////////////////////////////////////////////////////////*/
 
     // @note remove a function from non-default extension, where the extension's default version still has that function.
-    function test_state_removeFunctionFromExtension_functionStillExistsInDefault() public {
+    function test_state_disableFunctionInExtension_functionStillExistsInDefault() public {
         // Create Extension struct
         Extension memory extension = defaultExtension1;
         extension.metadata.implementation = address(new MultiplyDivideGet());
@@ -1843,8 +1843,8 @@ contract BaseRouterWithDefaultsTest is Test, IExtension {
         // Pre call checks
         assertEq(router.getImplementationForFunction(MultiplyDivideGet.multiplyNumber.selector), extension.metadata.implementation);
 
-        // Call: removeFunctionFromExtension
-        router.removeFunctionFromExtension(extension.metadata.name, MultiplyDivideGet.multiplyNumber.selector);
+        // Call: disableFunctionInExtension
+        router.disableFunctionInExtension(extension.metadata.name, MultiplyDivideGet.multiplyNumber.selector);
 
         // Post call checks
         assertEq(router.getImplementationForFunction(MultiplyDivideGet.multiplyNumber.selector), address(0));
@@ -1855,13 +1855,13 @@ contract BaseRouterWithDefaultsTest is Test, IExtension {
     }
 
     // @note remove a function from a default extension.
-    function test_revert_removeFunctionFromExtension_defaultExtension() public {
+    function test_revert_disableFunctionInExtension_defaultExtension() public {
         vm.expectRevert("ExtensionManager: extension does not exist.");
-        router.removeFunctionFromExtension(defaultExtension1.metadata.name, MultiplyDivide.multiplyNumber.selector);
+        router.disableFunctionInExtension(defaultExtension1.metadata.name, MultiplyDivide.multiplyNumber.selector);
     }
 
     // @note remove a function from an existing extension.
-    function test_state_removeFunctionFromExtension() public {
+    function test_state_disableFunctionInExtension() public {
         // Create Extension struct
         Extension memory extension;
         
@@ -1890,8 +1890,8 @@ contract BaseRouterWithDefaultsTest is Test, IExtension {
         assertEq(router.getImplementationForFunction(IncrementDecrementGet.incrementNumber.selector), extension.metadata.implementation);
         assertEq(router.getExtension(extension.metadata.name).functions.length, 2);
 
-        // Call: removeFunctionFromExtension
-        router.removeFunctionFromExtension(extension.metadata.name, IncrementDecrementGet.incrementNumber.selector);
+        // Call: disableFunctionInExtension
+        router.disableFunctionInExtension(extension.metadata.name, IncrementDecrementGet.incrementNumber.selector);
 
         // Post call checks
         assertEq(router.getImplementationForFunction(IncrementDecrementGet.incrementNumber.selector), address(0));
@@ -1906,7 +1906,7 @@ contract BaseRouterWithDefaultsTest is Test, IExtension {
     }
 
     // @note remove a receive function from an existing extension.
-    function test_state_removeFunctionFromExtension_receiveFunction() public {
+    function test_state_disableFunctionInExtension_receiveFunction() public {
         // Create Extension struct
         Extension memory extension;
         
@@ -1946,8 +1946,8 @@ contract BaseRouterWithDefaultsTest is Test, IExtension {
         assertEq(router.getImplementationForFunction(bytes4(0)), extension.metadata.implementation);
         assertEq(router.getExtension(extension.metadata.name).functions.length, 2);
 
-        // Call: removeFunctionFromExtension
-        router.removeFunctionFromExtension(extension.metadata.name, bytes4(0));
+        // Call: disableFunctionInExtension
+        router.disableFunctionInExtension(extension.metadata.name, bytes4(0));
 
         // Post call checks
         assertEq(router.getImplementationForFunction(bytes4(0)), address(0));
@@ -1966,14 +1966,14 @@ contract BaseRouterWithDefaultsTest is Test, IExtension {
     }
 
     // @note remove a function from an extension that does not exist.
-    function test_revert_removeFunctionFromExtension_extensionDoesNotExist() public {
-        // Call: removeFunctionFromExtension
+    function test_revert_disableFunctionInExtension_extensionDoesNotExist() public {
+        // Call: disableFunctionInExtension
         vm.expectRevert("ExtensionManager: extension does not exist.");
-        router.removeFunctionFromExtension("", IncrementDecrementGet.incrementNumber.selector);
+        router.disableFunctionInExtension("", IncrementDecrementGet.incrementNumber.selector);
     }
 
     // @note remove a function from an extension which does not have the function.
-    function test_revert_removeFunctionFromExtension_functionDoesNotExistInExtension() public {
+    function test_revert_disableFunctionInExtension_functionDoesNotExistInExtension() public {
         // Create Extension struct
         Extension memory extension;
         
@@ -2002,13 +2002,13 @@ contract BaseRouterWithDefaultsTest is Test, IExtension {
         assertEq(router.getImplementationForFunction(IncrementDecrementGet.incrementNumber.selector), extension.metadata.implementation);
         assertEq(router.getExtension(extension.metadata.name).functions.length, 2);
 
-        // Call: removeFunctionFromExtension
+        // Call: disableFunctionInExtension
         vm.expectRevert("ExtensionManager: incorrect extension.");
-        router.removeFunctionFromExtension(extension.metadata.name, IncrementDecrementGet.getNumber.selector);
+        router.disableFunctionInExtension(extension.metadata.name, IncrementDecrementGet.getNumber.selector);
     }
 
     // @note remove a function from an extension but the function exists in another extension.
-    function test_revert_removeFunctionFromExtension_functionExistsInAnotherExtension() public {
+    function test_revert_disableFunctionInExtension_functionExistsInAnotherExtension() public {
         // Create Extension struct
         Extension memory extension;
         Extension memory differentExtension;
@@ -2047,13 +2047,13 @@ contract BaseRouterWithDefaultsTest is Test, IExtension {
         router.addExtension(differentExtension);
         _validateExtensionDataOnContract(differentExtension);
 
-        // Call: removeFunctionFromExtension
+        // Call: disableFunctionInExtension
         vm.expectRevert("ExtensionManager: incorrect extension.");
-        router.removeFunctionFromExtension(extension.metadata.name, IncrementDecrementGet.getNumber.selector);
+        router.disableFunctionInExtension(extension.metadata.name, IncrementDecrementGet.getNumber.selector);
     }
 
     // @note remove a function (other than receive function) from an extension with an empty function selector.
-    function test_revert_removeFunctionFromExtension_emptyFunctionSelector() public {
+    function test_revert_disableFunctionInExtension_emptyFunctionSelector() public {
         // Create Extension struct
         Extension memory extension;
         
@@ -2082,9 +2082,9 @@ contract BaseRouterWithDefaultsTest is Test, IExtension {
         assertEq(router.getImplementationForFunction(IncrementDecrementGet.incrementNumber.selector), extension.metadata.implementation);
         assertEq(router.getExtension(extension.metadata.name).functions.length, 2);
 
-        // Call: removeFunctionFromExtension
+        // Call: disableFunctionInExtension
         vm.expectRevert("ExtensionManager: incorrect extension.");
-        router.removeFunctionFromExtension(extension.metadata.name, bytes4(0));
+        router.disableFunctionInExtension(extension.metadata.name, bytes4(0));
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -2135,7 +2135,7 @@ contract BaseRouterWithDefaultsTest is Test, IExtension {
 
         
         // 1. Remove buggy function from current extension.
-        router.removeFunctionFromExtension(extension.metadata.name, IncrementDecrementGetBug.decrementNumber.selector);
+        router.disableFunctionInExtension(extension.metadata.name, IncrementDecrementGetBug.decrementNumber.selector);
         // 2. Add fixed function as part of a new extension.
         Extension memory newExtension;
         newExtension.metadata.name = "DecrementFixed";
@@ -2195,7 +2195,7 @@ contract BaseRouterWithDefaultsTest is Test, IExtension {
         _validateExtensionDataOnContract(updatedExtensionWithBug);
 
         // 3. Remove the buggy function from the update.
-        router.removeFunctionFromExtension(extension.metadata.name, IncrementDecrementGet.decrementNumber.selector);
+        router.disableFunctionInExtension(extension.metadata.name, IncrementDecrementGet.decrementNumber.selector);
 
         // 4. Add fixed function as part of a new extension.
         Extension memory newExtension;

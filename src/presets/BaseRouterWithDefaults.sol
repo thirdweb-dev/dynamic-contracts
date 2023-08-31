@@ -102,8 +102,8 @@ contract BaseRouterWithDefaults is Router, ExtensionManager {
                         Overriden internal functions
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Adds a given function to an Extension.
-    function _addFunctionToExtension(string memory _extensionName, ExtensionFunction memory _extFunction) internal virtual override {
+    /// @dev Enables a function in an Extension.
+    function _enableFunctionInExtension(string memory _extensionName, ExtensionFunction memory _extFunction) internal virtual override {
 
         // Ensure that the function is not already implemented as part of a default extension different from 
         // the targeted `_extensionName` non-default extension.
@@ -115,7 +115,7 @@ contract BaseRouterWithDefaults is Router, ExtensionManager {
             "ExtensionManager: fn implemented in default extension."
         );
 
-        super._addFunctionToExtension(_extensionName, _extFunction);
+        super._enableFunctionInExtension(_extensionName, _extFunction);
     }
 
     /// @dev Returns whether a new extension can be added in the given execution context.

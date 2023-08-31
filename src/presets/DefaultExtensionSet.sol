@@ -74,7 +74,7 @@ contract DefaultExtensionSet is IRouterState, IRouterStateGetters {
         uint256 len = _extension.functions.length;
         for (uint256 i = 0; i < len; i += 1) {
             // 2. Store: function for extension.
-            _addFunctionToExtension(_extension.metadata.name, _extension.functions[i]);
+            _enableFunctionInExtension(_extension.metadata.name, _extension.functions[i]);
             // 3. Store: metadata for function.
             _setMetadataForFunction(_extension.functions[i].functionSelector, _extension.metadata);
         }
@@ -105,8 +105,8 @@ contract DefaultExtensionSet is IRouterState, IRouterStateGetters {
         _extensionManagerStorage().extensionMetadata[_functionSelector] = _metadata;
     }
 
-    /// @dev Adds a given function to an Extension.
-    function _addFunctionToExtension(string memory _extensionName, ExtensionFunction memory _extFunction) internal {
+    /// @dev Enables a function in an Extension.
+    function _enableFunctionInExtension(string memory _extensionName, ExtensionFunction memory _extFunction) internal {
         /**
          *  Note: `bytes4(0)` is the function selector for the `receive` function.
          *        So, we maintain a special fn selector-signature mismatch check for the `receive` function.

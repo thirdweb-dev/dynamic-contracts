@@ -59,7 +59,7 @@ contract ExtensionManager is IExtensionManager, IRouterState, IRouterStateGetter
         uint256 len = _extension.functions.length;
         for (uint256 i = 0; i < len; i += 1) {
             // 2. Store: function for extension.
-            _addFunctionToExtension(_extension.metadata.name, _extension.functions[i]);
+            _enableFunctionInExtension(_extension.metadata.name, _extension.functions[i]);
             // 3. Store: metadata for function.
             _setMetadataForFunction(_extension.functions[i].functionSelector, _extension.metadata);
         }
@@ -83,7 +83,7 @@ contract ExtensionManager is IExtensionManager, IRouterState, IRouterStateGetter
         uint256 len = _extension.functions.length;
         for (uint256 i = 0; i < len; i += 1) {
             // 2. Store: function for extension.
-            _addFunctionToExtension(_extension.metadata.name, _extension.functions[i]);
+            _enableFunctionInExtension(_extension.metadata.name, _extension.functions[i]);
             // 3. Store: metadata for function.
             _setMetadataForFunction(_extension.functions[i].functionSelector, _extension.metadata);
         }
@@ -110,14 +110,14 @@ contract ExtensionManager is IExtensionManager, IRouterState, IRouterStateGetter
     }
 
     /**
-     *  @notice Add a single function to an existing extension.
+     *  @notice Enables a single function in an existing extension.
      */
-    function addFunctionToExtension(string memory _extensionName, ExtensionFunction memory _function) external {
+    function enableFunctionInExtension(string memory _extensionName, ExtensionFunction memory _function) external {
         // Check: extension namespace must already exist.
-        require(_canAddFunctionToExtension(_extensionName, _function), "ExtensionManager: cannot Store: function for extension.");
+        require(_canEnableFunctionInExtension(_extensionName, _function), "ExtensionManager: cannot Store: function for extension.");
         
         // 1. Store: function for extension.
-        _addFunctionToExtension(_extensionName, _function);
+        _enableFunctionInExtension(_extensionName, _function);
 
         ExtensionMetadata memory metadata = _extensionManagerStorage().extensions[_extensionName].metadata;
         // 2. Store: metadata for function.
@@ -127,17 +127,17 @@ contract ExtensionManager is IExtensionManager, IRouterState, IRouterStateGetter
     }
 
     /**
-     *  @notice Remove a single function from an existing extension.
+     *  @notice Disables a single function in an Extension.
      */
-    function removeFunctionFromExtension(string memory _extensionName, bytes4 _functionSelector) external {
+    function disableFunctionInExtension(string memory _extensionName, bytes4 _functionSelector) external {
         // Check: extension namespace must already exist.
         // Check: function must be mapped to provided extension.
-        require(_canRemoveFunctionFromExtension(_extensionName, _functionSelector), "ExtensionManager: cannot remove function from extension.");
+        require(_canDisableFunctionInExtension(_extensionName, _functionSelector), "ExtensionManager: cannot remove function from extension.");
     
         ExtensionMetadata memory extMetadata = _extensionManagerStorage().extensionMetadata[_functionSelector];
 
         // 1. Delete: function from extension.
-        _removeFunctionFromExtension(_extensionName, _functionSelector);
+        _disableFunctionInExtension(_extensionName, _functionSelector);
         // 2. Delete: metadata for function.
         _deleteMetadataForFunction(_functionSelector);
 
@@ -173,8 +173,8 @@ contract ExtensionManager is IExtensionManager, IRouterState, IRouterStateGetter
         delete _extensionManagerStorage().extensionMetadata[_functionSelector];
     }
 
-    /// @dev Adds a given function to an Extension.
-    function _addFunctionToExtension(string memory _extensionName, ExtensionFunction memory _extFunction) internal virtual {
+    /// @dev Enables a function in an Extension.
+    function _enableFunctionInExtension(string memory _extensionName, ExtensionFunction memory _extFunction) internal virtual {
         /**
          *  Note: `bytes4(0)` is the function selector for the `receive` function.
          *        So, we maintain a special fn selector-signature mismatch check for the `receive` function.
@@ -202,8 +202,8 @@ contract ExtensionManager is IExtensionManager, IRouterState, IRouterStateGetter
         _extensionManagerStorage().extensions[_extensionName].functions.push(_extFunction);
     }
 
-    /// @dev Removes a given function from an Extension.
-    function _removeFunctionFromExtension(string memory _extensionName, bytes4 _functionSelector) internal {
+    /// @dev Disables a given function in an Extension.
+    function _disableFunctionInExtension(string memory _extensionName, bytes4 _functionSelector) internal {
         ExtensionFunction[] memory extensionFunctions = _extensionManagerStorage().extensions[_extensionName].functions;
 
         uint256 len = extensionFunctions.length;
@@ -266,16 +266,16 @@ contract ExtensionManager is IExtensionManager, IRouterState, IRouterStateGetter
         return true;
     }
 
-    /// @dev Returns whether a function can be added to an extension in the given execution context.
-    function _canAddFunctionToExtension(string memory _extensionName, ExtensionFunction memory) internal view virtual returns (bool) {
+    /// @dev Returns whether a function can be enabled in an extension in the given execution context.
+    function _canEnableFunctionInExtension(string memory _extensionName, ExtensionFunction memory) internal view virtual returns (bool) {
         // Check: extension namespace must already exist.
         require(_extensionManagerStorage().extensionNames.contains(_extensionName), "ExtensionManager: extension does not exist.");
 
         return true;
     }
 
-    /// @dev Returns whether an extension can be removed from an extension in the given execution context.
-    function _canRemoveFunctionFromExtension(string memory _extensionName, bytes4 _functionSelector) internal view virtual returns (bool) {
+    /// @dev Returns whether a function can be disabled in an extension in the given execution context.
+    function _canDisableFunctionInExtension(string memory _extensionName, bytes4 _functionSelector) internal view virtual returns (bool) {
         // Check: extension namespace must already exist.
         require(_extensionManagerStorage().extensionNames.contains(_extensionName), "ExtensionManager: extension does not exist.");
         // Check: function must be mapped to provided extension.

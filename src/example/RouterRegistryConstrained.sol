@@ -62,13 +62,13 @@ contract RouterRegistryConstrained is BaseRouterWithDefaults {
         return super._canRemoveExtension(_extensionName) && msg.sender == admin;
     }
 
-    /// @dev Returns whether a function can be added to an extension in the given execution context.
-    function _canAddFunctionToExtension(string memory _extensionName, ExtensionFunction memory _function) internal view virtual override returns (bool) {
-        return super._canAddFunctionToExtension(_extensionName, _function) && msg.sender == admin;
+    /// @dev Returns whether a function can be enabled in an extension in the given execution context.
+    function _canEnableFunctionInExtension(string memory _extensionName, ExtensionFunction memory _function) internal view virtual override returns (bool) {
+        return super._canEnableFunctionInExtension(_extensionName, _function) && msg.sender == admin;
     }
 
-    /// @dev Returns whether an extension can be removed from an extension in the given execution context.
-    function _canRemoveFunctionFromExtension(string memory _extensionName, bytes4 _functionSelector) internal view virtual override returns (bool) {
-        return super._canRemoveFunctionFromExtension(_extensionName, _functionSelector) && msg.sender == admin;
+    /// @dev Returns whether a function can be disabled in an extension in the given execution context.
+    function _canDisableFunctionInExtension(string memory _extensionName, bytes4 _functionSelector) internal view virtual override returns (bool) {
+        return super._canDisableFunctionInExtension(_extensionName, _functionSelector) && msg.sender == admin;
     }
 }

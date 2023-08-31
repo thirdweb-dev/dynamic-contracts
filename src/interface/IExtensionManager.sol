@@ -26,14 +26,14 @@ interface IExtensionManager is IExtension {
     function removeExtension(string memory extensionName) external;
 
     /**
-     *  @notice Add a single function to an existing extension.
+     *  @notice Enables a single function in an existing extension.
      */
-    function addFunctionToExtension(string memory extensionName, ExtensionFunction memory extFunction) external;
+    function enableFunctionInExtension(string memory extensionName, ExtensionFunction memory extFunction) external;
     
     /**
-     *  @notice Remove a single function from an existing extension.
+     *  @notice Disables a single function in an Extension.
      */
-    function removeFunctionFromExtension(string memory extensionName, bytes4 functionSelector) external;
+    function disableFunctionInExtension(string memory extensionName, bytes4 functionSelector) external;
 
     /*///////////////////////////////////////////////////////////////
                                 Events

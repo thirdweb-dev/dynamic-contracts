@@ -32,13 +32,13 @@ contract RouterImmutable is BaseRouterWithDefaults {
         return false;
     }
 
-    /// @dev Returns whether a function can be added to an extension in the given execution context.
-    function _canAddFunctionToExtension(string memory, ExtensionFunction memory) internal view virtual override returns (bool) {
+    /// @dev Returns whether a function can be enabled in an extension in the given execution context.
+    function _canEnableFunctionInExtension(string memory, ExtensionFunction memory) internal view virtual override returns (bool) {
         return false;
     }
 
-    /// @dev Returns whether an extension can be removed from an extension in the given execution context.
-    function _canRemoveFunctionFromExtension(string memory, bytes4) internal view virtual override returns (bool) {
+    /// @dev Returns whether a function can be disabled in an extension in the given execution context.
+    function _canDisableFunctionInExtension(string memory, bytes4) internal view virtual override returns (bool) {
         return false;
     }
     
