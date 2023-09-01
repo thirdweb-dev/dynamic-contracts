@@ -23,6 +23,8 @@ forge install https://github.com/thirdweb-dev/dynamic-contracts
 npm install @thirdweb-dev/dynamic-contracts
 ```
 
+### Project structure
+
 ```shell
 src
 |
