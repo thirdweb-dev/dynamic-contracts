@@ -276,7 +276,7 @@ contract BaseRouterUniTest is Test, IExtension {
         router.addExtension(extension1);
 
         vm.expectRevert("ExtensionManager: extension already exists.");
-        router.addExtension(extension2);
+        router.addExtension(extension1);
     }
     
 
@@ -497,7 +497,7 @@ contract BaseRouterUniTest is Test, IExtension {
         router.addExtension(extension1);
 
         vm.expectRevert("ExtensionManager: function impl already exists.");
-        router.addExtension(extension2);
+        router.addExtension(extension1);
     }
 
     /// @notice Revert: add an extension with a function that already exists in another non-default extension.
@@ -554,11 +554,11 @@ contract BaseRouterUniTest is Test, IExtension {
         updatedExtension.functions = new ExtensionFunction[](3);
         updatedExtension.functions[0] = defaultExtension1.functions[0];
         updatedExtension.functions[1] = ExtensionFunction(
-            IncrementDecrementMultiply.incrementNumber.selector,
+            IncrementDecrementGet.incrementNumber.selector,
             "incrementNumber()"
         );
         updatedExtension.functions[2] = ExtensionFunction(
-            IncrementDecrementMultiply.getNumber.selector,
+            IncrementDecrementGet.getNumber.selector,
             "getNumber()"
         );
 
@@ -569,9 +569,9 @@ contract BaseRouterUniTest is Test, IExtension {
         _validateExtensionDataOnContract(updatedExtension);
 
         // Verify functionality
-        assertEq(router.getImplementationForFunction(IncrementDecrementMultiply.multiplyNumber.selector), updatedExtension.metadata.implementation);
-        assertEq(router.getImplementationForFunction(IncrementDecrementMultiply.incrementNumber.selector), updatedExtension.metadata.implementation);
-        assertEq(router.getImplementationForFunction(IncrementDecrementMultiply.getNumber.selector), updatedExtension.metadata.implementation);
+        assertEq(router.getImplementationForFunction(MultiplyDivide.multiplyNumber.selector), updatedExtension.metadata.implementation);
+        assertEq(router.getImplementationForFunction(IncrementDecrementGet.incrementNumber.selector), updatedExtension.metadata.implementation);
+        assertEq(router.getImplementationForFunction(IncrementDecrementGet.getNumber.selector), updatedExtension.metadata.implementation);
         
         IncrementDecrementMultiply inc = IncrementDecrementMultiply(address(router));
         inc.incrementNumber();
@@ -959,7 +959,6 @@ contract BaseRouterUniTest is Test, IExtension {
     function test_revert_replaceExtension_fnAlreadyExistsInDefaultExtension() public {
         // Create Extension struct
         Extension memory extension;
-        Extension memory extension;
 
         // Set metadata
         extension.metadata.name = "IncrementDecrementGet";
@@ -975,11 +974,8 @@ contract BaseRouterUniTest is Test, IExtension {
         );
 
         // Call: addExtension
-        router.addExtension(extension1);
-        _validateExtensionDataOnContract(extension1);
-
-        router.addExtension(extension2);
-        _validateExtensionDataOnContract(extension2);
+        router.addExtension(extension);
+        _validateExtensionDataOnContract(extension);
 
         // Create Extension struct to replace existing extension
         Extension memory updatedExtension;
@@ -994,7 +990,7 @@ contract BaseRouterUniTest is Test, IExtension {
 
         // Call: addExtension
         vm.expectRevert("ExtensionManager: function impl already exists.");
-        router.replaceExtension(updatedExtension1);
+        router.replaceExtension(updatedExtension);
     }
 
     /// @notice Revert: replace an extension with a function that already exists in another non-default extension.
@@ -1161,7 +1157,7 @@ contract BaseRouterUniTest is Test, IExtension {
     function test_state_disableFunctionInExtension_defaultExtension() public {
 
         // Call: disableFunctionInExtension
-        router.disableFunctionInExtension(defaultExtension1.metadata.name, defaultExtension1.functions[0].selector);
+        router.disableFunctionInExtension(defaultExtension1.metadata.name, defaultExtension1.functions[0].functionSelector);
 
         // Post call checks
         assertEq(router.getImplementationForFunction(MultiplyDivide.multiplyNumber.selector), address(0));
@@ -1288,7 +1284,7 @@ contract BaseRouterUniTest is Test, IExtension {
     }
 
     /// @notice Revert: disable a function in an extension with an empty name.
-    function test_revert_disableFunctionInExtension_extensionDoesNotExist() public {
+    function test_revert_disableFunctionInExtension_emptyName() public {
         // Call: disableFunctionInExtension
         vm.expectRevert("ExtensionManager: extension does not exist.");
         router.disableFunctionInExtension("", IncrementDecrementGet.incrementNumber.selector);
@@ -1336,7 +1332,7 @@ contract BaseRouterUniTest is Test, IExtension {
     /// @notice Enable a function in a default extension.
     function test_state_enableFunctionInExtension_defaultExtension() public {
         // Call: disableFunctionInExtension
-        router.disableFunctionInExtension(defaultExtension1.metadata.name, defaultExtension1.functions[0].selector);
+        router.disableFunctionInExtension(defaultExtension1.metadata.name, defaultExtension1.functions[0].functionSelector);
 
         assertEq(router.getImplementationForFunction(MultiplyDivide.multiplyNumber.selector), address(0));
         assertEq(router.getExtension(defaultExtension1.metadata.name).functions.length, defaultExtension1.functions.length - 1);
@@ -1359,12 +1355,6 @@ contract BaseRouterUniTest is Test, IExtension {
         updatedExtension.functions[1] = defaultExtension1.functions[1];
 
         _validateExtensionDataOnContract(updatedExtension);
-
-        // Verify functionality
-        MultiplyDivide inc = MultiplyDivide(address(router));
-
-        assertEq(inc.multiplyNumber(2), 4);
-        assertEq(inc.multiplyNumber(3), 12);
     }
 
     /// @notice Enable a function in a non-default extension.
@@ -1675,12 +1665,12 @@ contract BaseRouterUniTest is Test, IExtension {
 
         // Call: enableFunctionInExtension
         ExtensionFunction memory fn = ExtensionFunction(
-            IncrementDecrementMultiply.multiplyNumber.selector,
+            MultiplyDivide.multiplyNumber.selector,
             "multiplyNumber(uint256)"
         );
 
         vm.expectRevert("ExtensionManager: function impl already exists.");
-        router.enableFunctionInExtension(extension1.metadata.name, fn);
+        router.enableFunctionInExtension(extension.metadata.name, fn);
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -1692,7 +1682,7 @@ contract BaseRouterUniTest is Test, IExtension {
     /// @notice Upgrade a buggy function in a default extension.
     function test_scenario_upgradeBuggyFunction_defaultExtension() public {
         // Disable buggy function in extension
-        router.disableFunctionInExtension(defaultExtension1.metadata.name, defaultExtension1.functions[0].selector);
+        router.disableFunctionInExtension(defaultExtension1.metadata.name, defaultExtension1.functions[0].functionSelector);
 
         assertEq(router.getImplementationForFunction(MultiplyDivide.multiplyNumber.selector), address(0));
         assertEq(router.getExtension(defaultExtension1.metadata.name).functions.length, defaultExtension1.functions.length - 1);

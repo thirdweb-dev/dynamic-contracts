@@ -3,16 +3,16 @@
 
 pragma solidity ^0.8.0;
 
-import "../presets/BaseRouter.sol";
+import "../presets/BaseRouterUni.sol";
 
 /**
  *  This smart contract is an EXAMPLE, and is not meant for use in production.
  */
-contract RouterUpgradeable is BaseRouter {
+contract RouterUpgradeable is BaseRouterUni {
     
     address public admin;
 
-    constructor() {
+    constructor() BaseRouterUni(new Extension[](0)) {
         admin = msg.sender;
     }
 

@@ -3,15 +3,15 @@
 
 pragma solidity ^0.8.0;
 
-import "../presets/BaseRouterWithDefaults.sol";
+import "../presets/BaseRouterUni.sol";
 
 /**
  *  This smart contract is an EXAMPLE, and is not meant for use in production.
  */
 
-contract RouterImmutable is BaseRouterWithDefaults {
+contract RouterImmutable is BaseRouterUni {
     
-    constructor(Extension[] memory _extensions) BaseRouterWithDefaults(_extensions) {}
+    constructor(Extension[] memory _extensions) BaseRouterUni(_extensions) {}
 
     /*///////////////////////////////////////////////////////////////
                             Overrides

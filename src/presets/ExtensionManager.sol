@@ -70,7 +70,54 @@ abstract contract ExtensionManager is IExtensionManager, IRouterState, IRouterSt
      *  @notice Add a new extension to the router.
      *  @param _extension The extension to add.
      */
-    function addExtension(Extension memory _extension) external onlyAuthorizedCall {    
+    function addExtension(Extension memory _extension) public virtual onlyAuthorizedCall {    
+        _addExtension(_extension);
+    }
+
+    /**
+     *  @notice Fully replace an existing extension of the router.
+     *  @dev The extension with name `extension.name` is the extension being replaced.
+     *  @param _extension The extension to replace or overwrite.
+     */
+    function replaceExtension(Extension memory _extension) public virtual onlyAuthorizedCall {
+        _replaceExtension(_extension);
+    }
+
+    /**
+     *  @notice Remove an existing extension from the router.
+     *  @param _extensionName The name of the extension to remove.
+     */
+    function removeExtension(string memory _extensionName) public virtual onlyAuthorizedCall {
+        _removeExtension(_extensionName);
+    }
+
+    /**
+     *  @notice Enables a single function in an existing extension.
+     *  @dev Makes the given function callable on the router.
+     *
+     *  @param _extensionName The name of the extension to which `extFunction` belongs.
+     *  @param _function The function to enable.
+     */
+    function enableFunctionInExtension(string memory _extensionName, ExtensionFunction memory _function) public virtual onlyAuthorizedCall {
+        _enableFunctionInExtension(_extensionName, _function);
+    }
+
+    /**
+     *  @notice Disables a single function in an Extension.
+     *
+     *  @param _extensionName The name of the extension to which the function of `functionSelector` belongs.
+     *  @param _functionSelector The function to disable.
+     */
+    function disableFunctionInExtension(string memory _extensionName, bytes4 _functionSelector) public virtual onlyAuthorizedCall {
+        _disableFunctionInExtension(_extensionName, _functionSelector);
+    }
+    
+    /*///////////////////////////////////////////////////////////////
+                            Internal functions
+    //////////////////////////////////////////////////////////////*/
+
+    /// @dev Add a new extension to the router.
+    function _addExtension(Extension memory _extension) internal virtual {    
         // Check: extension namespace must not already exist.
         // Check: provided extension namespace must not be empty.
         // Check: provided extension implementation must be non-zero.
@@ -83,7 +130,7 @@ abstract contract ExtensionManager is IExtensionManager, IRouterState, IRouterSt
         uint256 len = _extension.functions.length;
         for (uint256 i = 0; i < len; i += 1) {
             // 2. Store: function for extension.
-            _enableFunctionInExtension(_extension.metadata.name, _extension.functions[i]);
+            _addToFunctionMap(_extension.metadata.name, _extension.functions[i]);
             // 3. Store: metadata for function.
             _setMetadataForFunction(_extension.functions[i].functionSelector, _extension.metadata);
         }
@@ -91,12 +138,8 @@ abstract contract ExtensionManager is IExtensionManager, IRouterState, IRouterSt
         emit ExtensionAdded(_extension.metadata.name, _extension.metadata.implementation, _extension);
     }
 
-    /**
-     *  @notice Fully replace an existing extension of the router.
-     *  @dev The extension with name `extension.name` is the extension being replaced.
-     *  @param _extension The extension to replace or overwrite.
-     */
-    function replaceExtension(Extension memory _extension) external onlyAuthorizedCall {
+    /// @dev Fully replace an existing extension of the router.
+    function _replaceExtension(Extension memory _extension) internal virtual {
         // Check: extension namespace must already exist.
         // Check: provided extension implementation must be non-zero.
         require(_canReplaceExtension(_extension), "ExtensionManager: cannot replace extension.");
@@ -109,7 +152,7 @@ abstract contract ExtensionManager is IExtensionManager, IRouterState, IRouterSt
         uint256 len = _extension.functions.length;
         for (uint256 i = 0; i < len; i += 1) {
             // 2. Store: function for extension.
-            _enableFunctionInExtension(_extension.metadata.name, _extension.functions[i]);
+            _addToFunctionMap(_extension.metadata.name, _extension.functions[i]);
             // 3. Store: metadata for function.
             _setMetadataForFunction(_extension.functions[i].functionSelector, _extension.metadata);
         }
@@ -117,11 +160,8 @@ abstract contract ExtensionManager is IExtensionManager, IRouterState, IRouterSt
         emit ExtensionReplaced(_extension.metadata.name, _extension.metadata.implementation, _extension);
     }
 
-    /**
-     *  @notice Remove an existing extension from the router.
-     *  @param _extensionName The name of the extension to remove.
-     */
-    function removeExtension(string memory _extensionName) external onlyAuthorizedCall {
+    /// @dev Remove an existing extension from the router.
+    function _removeExtension(string memory _extensionName) internal virtual {
         // Check: extension namespace must already exist.
         // Delete: extension namespace.
         require(_canRemoveExtension(_extensionName), "ExtensionManager: cannot remove extension.");
@@ -136,19 +176,13 @@ abstract contract ExtensionManager is IExtensionManager, IRouterState, IRouterSt
         emit ExtensionRemoved(_extensionName, extension);
     }
 
-    /**
-     *  @notice Enables a single function in an existing extension.
-     *  @dev Makes the given function callable on the router.
-     *
-     *  @param _extensionName The name of the extension to which `extFunction` belongs.
-     *  @param _function The function to enable.
-     */
-    function enableFunctionInExtension(string memory _extensionName, ExtensionFunction memory _function) external onlyAuthorizedCall {
+    /// @dev Makes the given function callable on the router.
+    function _enableFunctionInExtension(string memory _extensionName, ExtensionFunction memory _function) internal virtual {
         // Check: extension namespace must already exist.
         require(_canEnableFunctionInExtension(_extensionName, _function), "ExtensionManager: cannot Store: function for extension.");
         
         // 1. Store: function for extension.
-        _enableFunctionInExtension(_extensionName, _function);
+        _addToFunctionMap(_extensionName, _function);
 
         ExtensionMetadata memory metadata = _extensionManagerStorage().extensions[_extensionName].metadata;
         // 2. Store: metadata for function.
@@ -157,13 +191,8 @@ abstract contract ExtensionManager is IExtensionManager, IRouterState, IRouterSt
         emit FunctionEnabled(_extensionName, _function.functionSelector, _function, metadata);
     }
 
-    /**
-     *  @notice Disables a single function in an Extension.
-     *
-     *  @param _extensionName The name of the extension to which the function of `functionSelector` belongs.
-     *  @param _functionSelector The function to disable.
-     */
-    function disableFunctionInExtension(string memory _extensionName, bytes4 _functionSelector) external onlyAuthorizedCall {
+    /// @dev Disables a single function in an Extension.
+    function _disableFunctionInExtension(string memory _extensionName, bytes4 _functionSelector) public virtual onlyAuthorizedCall {
         // Check: extension namespace must already exist.
         // Check: function must be mapped to provided extension.
         require(_canDisableFunctionInExtension(_extensionName, _functionSelector), "ExtensionManager: cannot remove function from extension.");
@@ -171,16 +200,12 @@ abstract contract ExtensionManager is IExtensionManager, IRouterState, IRouterSt
         ExtensionMetadata memory extMetadata = _extensionManagerStorage().extensionMetadata[_functionSelector];
 
         // 1. Delete: function from extension.
-        _disableFunctionInExtension(_extensionName, _functionSelector);
+        _deleteFromFunctionMap(_extensionName, _functionSelector);
         // 2. Delete: metadata for function.
         _deleteMetadataForFunction(_functionSelector);
 
         emit FunctionDisabled(_extensionName, _functionSelector, extMetadata);
     }
-    
-    /*///////////////////////////////////////////////////////////////
-                            Internal functions
-    //////////////////////////////////////////////////////////////*/
 
     /// @dev Returns the Extension for a given name.
     function _getExtension(string memory _extensionName) internal view returns (Extension memory) {
@@ -207,8 +232,8 @@ abstract contract ExtensionManager is IExtensionManager, IRouterState, IRouterSt
         delete _extensionManagerStorage().extensionMetadata[_functionSelector];
     }
 
-    /// @dev Enables a function in an Extension.
-    function _enableFunctionInExtension(string memory _extensionName, ExtensionFunction memory _extFunction) internal virtual {
+    /// @dev Adds a function to the function map of an extension.
+    function _addToFunctionMap(string memory _extensionName, ExtensionFunction memory _extFunction) internal virtual {
         /**
          *  Note: `bytes4(0)` is the function selector for the `receive` function.
          *        So, we maintain a special fn selector-signature mismatch check for the `receive` function.
@@ -236,8 +261,8 @@ abstract contract ExtensionManager is IExtensionManager, IRouterState, IRouterSt
         _extensionManagerStorage().extensions[_extensionName].functions.push(_extFunction);
     }
 
-    /// @dev Disables a given function in an Extension.
-    function _disableFunctionInExtension(string memory _extensionName, bytes4 _functionSelector) internal {
+    /// @dev Deletes a function from an extension's function map.
+    function _deleteFromFunctionMap(string memory _extensionName, bytes4 _functionSelector) internal {
         ExtensionFunction[] memory extensionFunctions = _extensionManagerStorage().extensions[_extensionName].functions;
 
         uint256 len = extensionFunctions.length;
