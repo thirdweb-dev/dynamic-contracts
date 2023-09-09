@@ -125,106 +125,1563 @@ contract BaseRouterUniTest is Test, IExtension {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Check that default extensions are stored correctly.
+    function test_state_defaultExtensions() public {
+        Extension[] memory extensions = router.getAllExtensions();
+        assertEq(extensions.length, defaultExtensionsCount);
+
+        _validateExtensionDataOnContract(defaultExtension1);
+        _validateExtensionDataOnContract(defaultExtension2);
+    }
 
     /*///////////////////////////////////////////////////////////////
                             Adding extensions
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Add an new extension.
+    function test_state_addExtension() public {
+
+        // Create Extension struct
+        Extension memory extension;
+        
+        // Set metadata
+        extension.metadata.name = "IncrementDecrement";
+        extension.metadata.metadataURI = "ipfs://IncrementDecrement";
+        extension.metadata.implementation = address(new IncrementDecrementGet());
+
+        // Set functions
+        extension.functions = new ExtensionFunction[](3);
+
+        extension.functions[0] = ExtensionFunction(
+            IncrementDecrementGet.incrementNumber.selector,
+            "incrementNumber()"
+        );
+        extension.functions[1] = ExtensionFunction(
+            IncrementDecrementGet.decrementNumber.selector,
+            "decrementNumber()"
+        );
+        extension.functions[2] = ExtensionFunction(
+            IncrementDecrementGet.getNumber.selector,
+            "getNumber()"
+        );
+
+        // Pre-call checks
+        assertEq(router.getImplementationForFunction(IncrementDecrementGet.incrementNumber.selector), address(0));
+        assertEq(router.getImplementationForFunction(IncrementDecrementGet.decrementNumber.selector), address(0));
+        assertEq(router.getImplementationForFunction(IncrementDecrementGet.getNumber.selector), address(0));
+        
+        ExtensionMetadata memory metadata1 = router.getMetadataForFunction(IncrementDecrementGet.incrementNumber.selector);
+        assertEq(metadata1.name, "");
+        assertEq(metadata1.metadataURI, "");
+        assertEq(metadata1.implementation, address(0));
+
+        ExtensionMetadata memory metadata2 = router.getMetadataForFunction(IncrementDecrementGet.decrementNumber.selector);
+        assertEq(metadata2.name, "");
+        assertEq(metadata2.metadataURI, "");
+        assertEq(metadata2.implementation, address(0));
+
+        ExtensionMetadata memory metadata3 = router.getMetadataForFunction(IncrementDecrementGet.getNumber.selector);
+        assertEq(metadata3.name, "");
+        assertEq(metadata3.metadataURI, "");
+        assertEq(metadata3.implementation, address(0));
+
+        assertEq(router.getAllExtensions().length, defaultExtensionsCount);
+
+        // Call: addExtension
+        router.addExtension(extension);
+
+        // Post-call checks
+        _validateExtensionDataOnContract(extension);
+
+        // Verify functionality
+
+        IncrementDecrementGet inc = IncrementDecrementGet(address(router));
+
+        assertEq(inc.getNumber(), 0);
+
+        inc.incrementNumber();
+        assertEq(inc.getNumber(), 1);
+        
+        inc.incrementNumber();
+        assertEq(inc.getNumber(), 2);
+
+        inc.decrementNumber();
+        assertEq(inc.getNumber(), 1);
+    }
+
+    /// @notice Add an extension with the receive function.
+     function test_state_addExtension_withReceiveFunction() public {
+        // Create Extension struct
+        Extension memory extension;
+        
+        // Set metadata
+        extension.metadata.name = "Receive";
+        extension.metadata.metadataURI = "ipfs://Receive";
+        extension.metadata.implementation = address(new Receive());
+        
+        // Set functions
+        extension.functions = new ExtensionFunction[](1);
+
+        extension.functions[0] = ExtensionFunction(
+            bytes4(0),
+            "receive()"
+        );
+
+        // Pre-call checks
+        address sender = address(0x123);
+        vm.deal(sender, 100 ether);
+
+        vm.expectRevert();
+        vm.prank(sender);
+        address(router).call{value: 1 ether}("");
+
+        // Call: addExtension
+        router.addExtension(extension);
+        
+        // Post-call checks
+        _validateExtensionDataOnContract(extension);
+
+        // Verify functionality
+
+        uint256 balBefore = (address(router)).balance;
+        uint256 amount = 1 ether;
+
+        vm.prank(sender);
+        address(router).call{value: 1 ether}("");
+
+        assertEq((address(router)).balance, balBefore + amount);
+    }
 
     /// @notice Revert: add an extension whose name is already used by a default extension.
+    function test_revert_addExtension_nameAlreadyUsedByDefaultExtension() public {
+        // Create Extension struct
+        Extension memory extension1;
+
+        // Set metadata
+        extension1.metadata.name = defaultExtension1.metadata.name;
+        extension1.metadata.metadataURI = "ipfs://IncrementDecrement";
+        extension1.metadata.implementation = address(new IncrementDecrement());   
+
+        // Set functions
+        extension1.functions = new ExtensionFunction[](2);
+        extension1.functions[0] = ExtensionFunction(
+            IncrementDecrementGet.incrementNumber.selector,
+            "incrementNumber()"
+        );
+        extension1.functions[1] = ExtensionFunction(
+            IncrementDecrementGet.decrementNumber.selector,
+            "decrementNumber()"
+        );
+
+        // Call: addExtension
+        router.addExtension(extension1);
+
+        vm.expectRevert("ExtensionManager: extension already exists.");
+        router.addExtension(extension2);
+    }
+    
 
     /// @notice Revert: add an extension whose name is already used by another non-default extension.
+    function test_revert_addExtension_nameAlreadyUsed() public {
+        // Create Extension struct
+        Extension memory extension1;
+        Extension memory extension2;
+
+        // Set metadata
+        extension1.metadata.name = "IncrementDecrement";
+        extension1.metadata.metadataURI = "ipfs://IncrementDecrement";
+        extension1.metadata.implementation = address(new IncrementDecrement());   
+
+        extension2.metadata.name = extension1.metadata.name;
+        extension2.metadata.metadataURI = "ipfs://IncrementDecrementGet";
+        extension2.metadata.implementation = address(new IncrementDecrementGet());
+
+        // Set functions
+        extension1.functions = new ExtensionFunction[](2);
+        extension1.functions[0] = ExtensionFunction(
+            IncrementDecrementGet.incrementNumber.selector,
+            "incrementNumber()"
+        );
+        extension1.functions[1] = ExtensionFunction(
+            IncrementDecrementGet.decrementNumber.selector,
+            "decrementNumber()"
+        );
+        
+        extension2.functions = new ExtensionFunction[](1);
+        extension2.functions[0] = ExtensionFunction(
+            IncrementDecrementGet.getNumber.selector,
+            "getNumber()"
+        );
+
+        // Call: addExtension
+        router.addExtension(extension1);
+
+        vm.expectRevert("ExtensionManager: extension already exists.");
+        router.addExtension(extension2);
+    }
 
     /// @notice Revert: add an extension with an empty name.
+    function test_revert_addExtension_emptyName() public {
+        // Create Extension struct
+        Extension memory extension1;
+
+        // Set metadata
+        extension1.metadata.name = "";
+        extension1.metadata.metadataURI = "ipfs://IncrementDecrement";
+        extension1.metadata.implementation = address(new IncrementDecrement());   
+
+        // Set functions
+        extension1.functions = new ExtensionFunction[](2);
+        extension1.functions[0] = ExtensionFunction(
+            IncrementDecrementGet.incrementNumber.selector,
+            "incrementNumber()"
+        );
+        extension1.functions[1] = ExtensionFunction(
+            IncrementDecrementGet.decrementNumber.selector,
+            "decrementNumber()"
+        );
+
+        // Call: addExtension
+        vm.expectRevert("ExtensionManager: empty name.");
+        router.addExtension(extension1);
+    }
 
     /// @notice Revert: add an extension with an empty implementation address.
+    function test_revert_addExtension_emptyImplementation() public {
+        // Create Extension struct
+        Extension memory extension1;
+
+        // Set metadata
+        extension1.metadata.name = "IncrementDecrement";
+        extension1.metadata.metadataURI = "ipfs://IncrementDecrement";
+        extension1.metadata.implementation = address(0);   
+
+        // Set functions
+        extension1.functions = new ExtensionFunction[](2);
+        extension1.functions[0] = ExtensionFunction(
+            IncrementDecrementGet.incrementNumber.selector,
+            "incrementNumber()"
+        );
+        extension1.functions[1] = ExtensionFunction(
+            IncrementDecrementGet.decrementNumber.selector,
+            "decrementNumber()"
+        );
+
+        // Call: addExtension
+        vm.expectRevert("ExtensionManager: adding extension without implementation.");
+        router.addExtension(extension1);
+    }
 
     /// @notice Revert: add an extension with a function selector-signature mismatch.
+    function test_revert_addExtension_fnSelectorSignatureMismatch() public {
+        // Create Extension struct
+        Extension memory extension1;
+
+        // Set metadata
+        extension1.metadata.name = "IncrementDecrement";
+        extension1.metadata.metadataURI = "ipfs://IncrementDecrement";
+        extension1.metadata.implementation = address(new IncrementDecrement());   
+
+        // Set functions
+        extension1.functions = new ExtensionFunction[](2);
+        extension1.functions[0] = ExtensionFunction(
+            IncrementDecrementGet.incrementNumber.selector,
+            "getNumber()"
+        );
+        extension1.functions[1] = ExtensionFunction(
+            IncrementDecrementGet.decrementNumber.selector,
+            "decrementNumber()"
+        );
+
+        // Call: addExtension
+        vm.expectRevert("ExtensionManager: fn selector and signature mismatch.");
+        router.addExtension(extension1);
+    }
 
     /// @notice Revert: add an extension with an empty function signature.
+    function test_revert_addExtension_emptyFunctionSignature() public {
+        // Create Extension struct
+        Extension memory extension1;
+
+        // Set metadata
+        extension1.metadata.name = "IncrementDecrement";
+        extension1.metadata.metadataURI = "ipfs://IncrementDecrement";
+        extension1.metadata.implementation = address(new IncrementDecrement());   
+
+        // Set functions
+        extension1.functions = new ExtensionFunction[](2);
+        extension1.functions[0] = ExtensionFunction(
+            IncrementDecrementGet.incrementNumber.selector,
+            ""
+        );
+        extension1.functions[1] = ExtensionFunction(
+            IncrementDecrementGet.decrementNumber.selector,
+            "decrementNumber()"
+        );
+
+        // Call: addExtension
+        vm.expectRevert("ExtensionManager: fn selector and signature mismatch.");
+        router.addExtension(extension1);
+    }
 
     /// @notice Revert: add an extension with an empty function selector.
+    function test_revert_addExtension_emptyFunctionSelector() public {
+        // Create Extension struct
+        Extension memory extension1;
+
+        // Set metadata
+        extension1.metadata.name = "IncrementDecrement";
+        extension1.metadata.metadataURI = "ipfs://IncrementDecrement";
+        extension1.metadata.implementation = address(new IncrementDecrement());   
+
+        // Set functions
+        extension1.functions = new ExtensionFunction[](2);
+        extension1.functions[0] = ExtensionFunction(
+            bytes4(0),
+            "incrementNumber()"
+        );
+        extension1.functions[1] = ExtensionFunction(
+            IncrementDecrementGet.decrementNumber.selector,
+            "decrementNumber()"
+        );
+
+        // Call: addExtension
+        vm.expectRevert("ExtensionManager: fn selector and signature mismatch.");
+        router.addExtension(extension1);
+    }
 
     /// @notice Revert: add an extension specifying the same function twice.
+    function test_revert_addExtension_duplicateFunction() public {
+        // Create Extension struct
+        Extension memory extension1;
+
+        // Set metadata
+        extension1.metadata.name = "IncrementDecrement";
+        extension1.metadata.metadataURI = "ipfs://IncrementDecrement";
+        extension1.metadata.implementation = address(new IncrementDecrement());   
+
+        // Set functions
+        extension1.functions = new ExtensionFunction[](2);
+        extension1.functions[0] = ExtensionFunction(
+            IncrementDecrementGet.incrementNumber.selector,
+            "incrementNumber()"
+        );
+        extension1.functions[1] = ExtensionFunction(
+            IncrementDecrementGet.incrementNumber.selector,
+            "incrementNumber()"
+        );
+
+        // Call: addExtension
+        vm.expectRevert("ExtensionManager: function impl already exists.");
+        router.addExtension(extension1);
+    }
 
     /// @notice Revert: add an extension with a function that already exists in a default extension.
+    function test_revert_addExtension_fnAlreadyExistsInDefaultExtension() public {
+        // Create Extension struct
+        Extension memory extension1;
+
+        // Set metadata
+        extension1.metadata.name = "IncrementDecrement";
+        extension1.metadata.metadataURI = "ipfs://IncrementDecrement";
+        extension1.metadata.implementation = address(new IncrementDecrement());   
+
+        // Set functions
+        extension1.functions = new ExtensionFunction[](2);
+        extension1.functions[0] = ExtensionFunction(
+            IncrementDecrementGet.incrementNumber.selector,
+            "incrementNumber()"
+        );
+        extension1.functions[1] = defaultExtension1.functions[0];
+
+        // Call: addExtension
+        router.addExtension(extension1);
+
+        vm.expectRevert("ExtensionManager: function impl already exists.");
+        router.addExtension(extension2);
+    }
 
     /// @notice Revert: add an extension with a function that already exists in another non-default extension.
+    function test_revert_addExtension_fnAlreadyExistsInAnotherExtension() public {
+        // Create Extension struct
+        Extension memory extension1;
+        Extension memory extension2;
+
+        // Set metadata
+        extension1.metadata.name = "IncrementDecrement";
+        extension1.metadata.metadataURI = "ipfs://IncrementDecrement";
+        extension1.metadata.implementation = address(new IncrementDecrement());   
+
+        extension2.metadata.name = "IncrementDecrementGet";
+        extension2.metadata.metadataURI = "ipfs://IncrementDecrementGet";
+        extension2.metadata.implementation = address(new IncrementDecrementGet());
+
+        // Set functions
+        extension1.functions = new ExtensionFunction[](2);
+        extension1.functions[0] = ExtensionFunction(
+            IncrementDecrementGet.incrementNumber.selector,
+            "incrementNumber()"
+        );
+        extension1.functions[1] = ExtensionFunction(
+            IncrementDecrementGet.decrementNumber.selector,
+            "decrementNumber()"
+        );
+        
+        extension2.functions = new ExtensionFunction[](1);
+        extension2.functions[0] = ExtensionFunction(
+            IncrementDecrementGet.incrementNumber.selector,
+            "incrementNumber()"
+        );
+
+        // Call: addExtension
+        router.addExtension(extension1);
+
+        vm.expectRevert("ExtensionManager: function impl already exists.");
+        router.addExtension(extension2);
+    }
 
     /*///////////////////////////////////////////////////////////////
                             Replace extensions
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Replace a default extension with a new one.
+    function test_state_replaceExtension_defaultExtension() public {
+        // Create Extension struct to replace existing extension
+        Extension memory updatedExtension;
+
+        updatedExtension.metadata = defaultExtension1.metadata;
+        updatedExtension.metadata.implementation = address(new IncrementDecrementMultiply());
+        
+        updatedExtension.functions = new ExtensionFunction[](3);
+        updatedExtension.functions[0] = defaultExtension1.functions[0];
+        updatedExtension.functions[1] = ExtensionFunction(
+            IncrementDecrementMultiply.incrementNumber.selector,
+            "incrementNumber()"
+        );
+        updatedExtension.functions[2] = ExtensionFunction(
+            IncrementDecrementMultiply.getNumber.selector,
+            "getNumber()"
+        );
+
+        // Call: addExtension
+        router.replaceExtension(updatedExtension);
+
+        // Post-call checks
+        _validateExtensionDataOnContract(updatedExtension);
+
+        // Verify functionality
+        assertEq(router.getImplementationForFunction(IncrementDecrementMultiply.multiplyNumber.selector), updatedExtension.metadata.implementation);
+        assertEq(router.getImplementationForFunction(IncrementDecrementMultiply.incrementNumber.selector), updatedExtension.metadata.implementation);
+        assertEq(router.getImplementationForFunction(IncrementDecrementMultiply.getNumber.selector), updatedExtension.metadata.implementation);
+        
+        IncrementDecrementMultiply inc = IncrementDecrementMultiply(address(router));
+        inc.incrementNumber();
+        inc.incrementNumber();
+        assertEq(inc.getNumber(), 2);
+
+
+        inc.multiplyNumber(2);
+        assertEq(inc.getNumber(), 4);
+
+        vm.expectRevert("Router: function does not exist.");
+        MultiplyDivide(address(router)).divideNumber(2);
+    }
+
+    
 
     /// @notice Replace a non-default extension with a new one.
+    function test_state_replaceExtension() public {
+        // Create Extension struct
+        Extension memory extension;
+
+        // Set metadata
+        extension.metadata.name = "IncrementDecrement";
+        extension.metadata.metadataURI = "ipfs://IncrementDecrement";
+        extension.metadata.implementation = address(new IncrementDecrement());   
+
+        // Set functions
+        extension.functions = new ExtensionFunction[](2);
+        extension.functions[0] = ExtensionFunction(
+            IncrementDecrementGet.incrementNumber.selector,
+            "incrementNumber()"
+        );
+        extension.functions[1] = ExtensionFunction(
+            IncrementDecrementGet.decrementNumber.selector,
+            "decrementNumber()"
+        );
+
+        // Call: addExtension
+        router.addExtension(extension);
+        _validateExtensionDataOnContract(extension);
+
+        // Create Extension struct to replace existing extension
+        Extension memory updatedExtension;
+
+        updatedExtension.metadata = extension.metadata;
+        updatedExtension.metadata.implementation = address(new IncrementDecrementGet());
+        
+        updatedExtension.functions = new ExtensionFunction[](3);
+        updatedExtension.functions[0] = extension.functions[0];
+        updatedExtension.functions[1] = extension.functions[1];
+        updatedExtension.functions[2] = ExtensionFunction(
+            IncrementDecrementGet.getNumber.selector,
+            "getNumber()"
+        );
+
+        // Call: addExtension
+        router.replaceExtension(updatedExtension);
+
+        // Post-call checks
+        _validateExtensionDataOnContract(updatedExtension);
+
+        // Verify functionality
+        assertEq(router.getImplementationForFunction(IncrementDecrementGet.incrementNumber.selector), updatedExtension.metadata.implementation);
+        assertEq(router.getImplementationForFunction(IncrementDecrementGet.decrementNumber.selector), updatedExtension.metadata.implementation);
+        assertEq(router.getImplementationForFunction(IncrementDecrementGet.getNumber.selector), updatedExtension.metadata.implementation);
+        
+        IncrementDecrementGet inc = IncrementDecrementGet(address(router));
+        inc.incrementNumber();
+        inc.incrementNumber();
+        inc.incrementNumber();
+        inc.decrementNumber();
+
+        assertEq(inc.getNumber(), 2);
+    }
+
 
     /// @notice Revert: replace a non existent extension.
+    function test_revert_replaceExtension_extensionDoesNotExist() public {
+        // Create Extension struct
+        Extension memory extension;
+
+        // Set metadata
+        extension.metadata.name = "IncrementDecrement";
+        extension.metadata.metadataURI = "ipfs://IncrementDecrement";
+        extension.metadata.implementation = address(new IncrementDecrement());   
+
+        // Set functions
+        extension.functions = new ExtensionFunction[](2);
+        extension.functions[0] = ExtensionFunction(
+            IncrementDecrementGet.incrementNumber.selector,
+            "incrementNumber()"
+        );
+        extension.functions[1] = ExtensionFunction(
+            IncrementDecrementGet.decrementNumber.selector,
+            "decrementNumber()"
+        );
+
+        // Call: replaceExtension
+        vm.expectRevert("ExtensionManager: extension does not exist.");
+        router.replaceExtension(extension);
+    }
 
     /// @notice Revert: replace an extension with an empty name.
+    function test_revert_replaceExtension_emptyName() public {
+        // Create Extension struct
+        Extension memory extension;
+
+        // Set metadata
+        extension.metadata.name = "IncrementDecrement";
+        extension.metadata.metadataURI = "ipfs://IncrementDecrement";
+        extension.metadata.implementation = address(new IncrementDecrement());   
+
+        // Set functions
+        extension.functions = new ExtensionFunction[](2);
+        extension.functions[0] = ExtensionFunction(
+            IncrementDecrementGet.incrementNumber.selector,
+            "incrementNumber()"
+        );
+        extension.functions[1] = ExtensionFunction(
+            IncrementDecrementGet.decrementNumber.selector,
+            "decrementNumber()"
+        );
+
+        // Call: addExtension
+        router.addExtension(extension);
+        _validateExtensionDataOnContract(extension);
+
+        IncrementDecrementGet inc = IncrementDecrementGet(address(router));
+        inc.incrementNumber();
+        inc.incrementNumber();
+
+        // Create Extension struct to replace existing extension
+        Extension memory updatedExtension;
+
+        updatedExtension.metadata.name = "";
+        updatedExtension.metadata.metadataURI = extension.metadata.metadataURI;
+        updatedExtension.metadata.implementation = address(new IncrementDecrementGet());
+        updatedExtension.functions = new ExtensionFunction[](1);
+        updatedExtension.functions[0] = ExtensionFunction(
+            IncrementDecrementGet.getNumber.selector,
+            "getNumber()"
+        );
+
+        // Call: replaceExtension
+        vm.expectRevert("ExtensionManager: extension does not exist.");
+        router.replaceExtension(updatedExtension);
+    }
 
     /// @notice Revert: replace an extension with an empty implementation address.
+    function test_revert_replaceExtension_emptyImplementation() public {
+        // Create Extension struct
+        Extension memory extension;
+
+        // Set metadata
+        extension.metadata.name = "IncrementDecrement";
+        extension.metadata.metadataURI = "ipfs://IncrementDecrement";
+        extension.metadata.implementation = address(new IncrementDecrement());   
+
+        // Set functions
+        extension.functions = new ExtensionFunction[](2);
+        extension.functions[0] = ExtensionFunction(
+            IncrementDecrementGet.incrementNumber.selector,
+            "incrementNumber()"
+        );
+        extension.functions[1] = ExtensionFunction(
+            IncrementDecrementGet.decrementNumber.selector,
+            "decrementNumber()"
+        );
+
+        // Call: addExtension
+        router.addExtension(extension);
+        _validateExtensionDataOnContract(extension);
+
+        IncrementDecrementGet inc = IncrementDecrementGet(address(router));
+        inc.incrementNumber();
+        inc.incrementNumber();
+
+        // Create Extension struct to replace existing extension
+        Extension memory updatedExtension;
+
+        updatedExtension.metadata.name = extension.metadata.name;
+        updatedExtension.metadata.metadataURI = extension.metadata.metadataURI;
+        updatedExtension.metadata.implementation = address(0);
+        updatedExtension.functions = new ExtensionFunction[](1);
+        updatedExtension.functions[0] = ExtensionFunction(
+            IncrementDecrementGet.getNumber.selector,
+            "getNumber()"
+        );
+
+        // Call: replaceExtension
+        vm.expectRevert("ExtensionManager: adding extension without implementation.");
+        router.replaceExtension(updatedExtension);
+    }
 
     /// @notice Revert: replace an extension with a function selector-signature mismatch.
+    function test_revert_replaceExtension_fnSelectorSignatureMismatch() public {
+        // Create Extension struct
+        Extension memory extension;
+
+        // Set metadata
+        extension.metadata.name = "IncrementDecrement";
+        extension.metadata.metadataURI = "ipfs://IncrementDecrement";
+        extension.metadata.implementation = address(new IncrementDecrement());   
+
+        // Set functions
+        extension.functions = new ExtensionFunction[](2);
+        extension.functions[0] = ExtensionFunction(
+            IncrementDecrementGet.incrementNumber.selector,
+            "incrementNumber()"
+        );
+        extension.functions[1] = ExtensionFunction(
+            IncrementDecrementGet.decrementNumber.selector,
+            "decrementNumber()"
+        );
+
+        // Call: addExtension
+        router.addExtension(extension);
+        _validateExtensionDataOnContract(extension);
+
+        IncrementDecrementGet inc = IncrementDecrementGet(address(router));
+        inc.incrementNumber();
+        inc.incrementNumber();
+
+        // Create Extension struct to replace existing extension
+        Extension memory updatedExtension;
+
+        updatedExtension.metadata.name = extension.metadata.name;
+        updatedExtension.metadata.metadataURI = extension.metadata.metadataURI;
+        updatedExtension.metadata.implementation = address(new IncrementDecrementGet());
+        updatedExtension.functions = new ExtensionFunction[](1);
+        updatedExtension.functions[0] = ExtensionFunction(
+            IncrementDecrementGet.incrementNumber.selector,
+            "getNumber()"
+        );
+
+        // Call: replaceExtension
+        vm.expectRevert("ExtensionManager: fn selector and signature mismatch.");
+        router.replaceExtension(updatedExtension);
+    }
 
     /// @notice Revert: replace an extension with an empty function signature.
+    function test_revert_replaceExtension_emptyFunctionSignature() public {
+        // Create Extension struct
+        Extension memory extension;
+
+        // Set metadata
+        extension.metadata.name = "IncrementDecrement";
+        extension.metadata.metadataURI = "ipfs://IncrementDecrement";
+        extension.metadata.implementation = address(new IncrementDecrement());   
+
+        // Set functions
+        extension.functions = new ExtensionFunction[](2);
+        extension.functions[0] = ExtensionFunction(
+            IncrementDecrementGet.incrementNumber.selector,
+            "incrementNumber()"
+        );
+        extension.functions[1] = ExtensionFunction(
+            IncrementDecrementGet.decrementNumber.selector,
+            "decrementNumber()"
+        );
+
+        // Call: addExtension
+        router.addExtension(extension);
+        _validateExtensionDataOnContract(extension);
+
+        IncrementDecrementGet inc = IncrementDecrementGet(address(router));
+        inc.incrementNumber();
+        inc.incrementNumber();
+
+        // Create Extension struct to replace existing extension
+        Extension memory updatedExtension;
+
+        updatedExtension.metadata.name = extension.metadata.name;
+        updatedExtension.metadata.metadataURI = extension.metadata.metadataURI;
+        updatedExtension.metadata.implementation = address(new IncrementDecrementGet());
+        updatedExtension.functions = new ExtensionFunction[](1);
+        updatedExtension.functions[0] = ExtensionFunction(
+            IncrementDecrementGet.getNumber.selector,
+            ""
+        );
+
+        // Call: replaceExtension
+        vm.expectRevert("ExtensionManager: fn selector and signature mismatch.");
+        router.replaceExtension(updatedExtension);
+    }
 
     /// @notice Revert: replace an extension with an empty function selector.
+    function test_revert_replaceExtension_emptyFunctionSelector() public {
+        // Create Extension struct
+        Extension memory extension;
+
+        // Set metadata
+        extension.metadata.name = "IncrementDecrement";
+        extension.metadata.metadataURI = "ipfs://IncrementDecrement";
+        extension.metadata.implementation = address(new IncrementDecrement());   
+
+        // Set functions
+        extension.functions = new ExtensionFunction[](2);
+        extension.functions[0] = ExtensionFunction(
+            IncrementDecrementGet.incrementNumber.selector,
+            "incrementNumber()"
+        );
+        extension.functions[1] = ExtensionFunction(
+            IncrementDecrementGet.decrementNumber.selector,
+            "decrementNumber()"
+        );
+
+        // Call: addExtension
+        router.addExtension(extension);
+        _validateExtensionDataOnContract(extension);
+
+        IncrementDecrementGet inc = IncrementDecrementGet(address(router));
+        inc.incrementNumber();
+        inc.incrementNumber();
+
+        // Create Extension struct to replace existing extension
+        Extension memory updatedExtension;
+
+        updatedExtension.metadata.name = extension.metadata.name;
+        updatedExtension.metadata.metadataURI = extension.metadata.metadataURI;
+        updatedExtension.metadata.implementation = address(new IncrementDecrementGet());
+        updatedExtension.functions = new ExtensionFunction[](1);
+        updatedExtension.functions[0] = ExtensionFunction(
+            bytes4(0),
+            "getNumber()"
+        );
+
+        // Call: replaceExtension
+        vm.expectRevert("ExtensionManager: fn selector and signature mismatch.");
+        router.replaceExtension(updatedExtension);
+    }
 
     /// @notice Revert: replace an extension specifying the same function twice.
+    function test_revert_replaceExtension_duplicateFunction() public {
+        // Create Extension struct
+        Extension memory extension;
+
+        // Set metadata
+        extension.metadata.name = "IncrementDecrement";
+        extension.metadata.metadataURI = "ipfs://IncrementDecrement";
+        extension.metadata.implementation = address(new IncrementDecrement());   
+
+        // Set functions
+        extension.functions = new ExtensionFunction[](2);
+        extension.functions[0] = ExtensionFunction(
+            IncrementDecrementGet.incrementNumber.selector,
+            "incrementNumber()"
+        );
+        extension.functions[1] = ExtensionFunction(
+            IncrementDecrementGet.decrementNumber.selector,
+            "decrementNumber()"
+        );
+
+        // Call: addExtension
+        router.addExtension(extension);
+        _validateExtensionDataOnContract(extension);
+
+        IncrementDecrementGet inc = IncrementDecrementGet(address(router));
+        inc.incrementNumber();
+        inc.incrementNumber();
+
+        // Create Extension struct to replace existing extension
+        Extension memory updatedExtension;
+
+        updatedExtension.metadata.name = extension.metadata.name;
+        updatedExtension.metadata.metadataURI = extension.metadata.metadataURI;
+        updatedExtension.metadata.implementation = address(new IncrementDecrementGet());
+        
+        updatedExtension.functions = new ExtensionFunction[](2);
+        updatedExtension.functions[0] = ExtensionFunction(
+            IncrementDecrementGet.getNumber.selector,
+            "getNumber()"
+        );
+        updatedExtension.functions[1] = ExtensionFunction(
+            IncrementDecrementGet.getNumber.selector,
+            "getNumber()"
+        );
+
+        // Call: replaceExtension
+        vm.expectRevert("ExtensionManager: function impl already exists.");
+        router.replaceExtension(updatedExtension);
+    }
 
     /// @notice Revert: replace an extension with a function that already exists in a default extension.
+    function test_revert_replaceExtension_fnAlreadyExistsInDefaultExtension() public {
+        // Create Extension struct
+        Extension memory extension;
+        Extension memory extension;
+
+        // Set metadata
+        extension.metadata.name = "IncrementDecrementGet";
+        extension.metadata.metadataURI = "ipfs://IncrementDecrementGet";
+        extension.metadata.implementation = address(new IncrementDecrementGet());
+
+        // Set functions
+
+        extension.functions = new ExtensionFunction[](1);
+        extension.functions[0] = ExtensionFunction(
+            IncrementDecrementGet.getNumber.selector,
+            "getNumber()"
+        );
+
+        // Call: addExtension
+        router.addExtension(extension1);
+        _validateExtensionDataOnContract(extension1);
+
+        router.addExtension(extension2);
+        _validateExtensionDataOnContract(extension2);
+
+        // Create Extension struct to replace existing extension
+        Extension memory updatedExtension;
+
+        // Set metadata
+        updatedExtension.metadata = extension.metadata;
+        updatedExtension.metadata.implementation = address(new IncrementDecrementMultiply());
+        
+        updatedExtension.functions = new ExtensionFunction[](2);
+        updatedExtension.functions[0] = extension.functions[0];
+        updatedExtension.functions[1] = defaultExtension1.functions[0];
+
+        // Call: addExtension
+        vm.expectRevert("ExtensionManager: function impl already exists.");
+        router.replaceExtension(updatedExtension1);
+    }
 
     /// @notice Revert: replace an extension with a function that already exists in another non-default extension.
+    function test_revert_replaceExtension_fnAlreadyExistsInAnotherExtension() public {
+        // Create Extension struct
+        Extension memory extension1;
+        Extension memory extension2;
+
+        // Set metadata
+        extension1.metadata.name = "IncrementDecrement";
+        extension1.metadata.metadataURI = "ipfs://IncrementDecrement";
+        extension1.metadata.implementation = address(new IncrementDecrement());   
+
+        extension2.metadata.name = "IncrementDecrementGet";
+        extension2.metadata.metadataURI = "ipfs://IncrementDecrementGet";
+        extension2.metadata.implementation = address(new IncrementDecrementGet());
+
+        // Set functions
+        extension1.functions = new ExtensionFunction[](2);
+        extension1.functions[0] = ExtensionFunction(
+            IncrementDecrementGet.incrementNumber.selector,
+            "incrementNumber()"
+        );
+        extension1.functions[1] = ExtensionFunction(
+            IncrementDecrementGet.decrementNumber.selector,
+            "decrementNumber()"
+        );
+
+        extension2.functions = new ExtensionFunction[](1);
+        extension2.functions[0] = ExtensionFunction(
+            IncrementDecrementGet.getNumber.selector,
+            "getNumber()"
+        );
+
+        // Call: addExtension
+        router.addExtension(extension1);
+        _validateExtensionDataOnContract(extension1);
+
+        router.addExtension(extension2);
+        _validateExtensionDataOnContract(extension2);
+
+        // Create Extension struct to replace existing extension
+        Extension memory updatedExtension1;
+
+        updatedExtension1.metadata = extension1.metadata;
+        updatedExtension1.metadata.implementation = address(new IncrementDecrementGet());
+        
+        updatedExtension1.functions = new ExtensionFunction[](3);
+        updatedExtension1.functions[0] = extension1.functions[0];
+        updatedExtension1.functions[1] = extension1.functions[1];
+        
+        // Already exists in extension2
+        updatedExtension1.functions[2] = ExtensionFunction(
+            IncrementDecrementGet.getNumber.selector,
+            "getNumber()"
+        );
+
+        // Call: addExtension
+        vm.expectRevert("ExtensionManager: function impl already exists.");
+        router.replaceExtension(updatedExtension1);
+    }
 
     /*///////////////////////////////////////////////////////////////
                             Removing extensions
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Remove a default extension.
+    function test_state_removeExtension_defautlExtension() public {
+        // Call: removeExtension
+
+        assertEq(router.getAllExtensions().length, defaultExtensionsCount);
+
+        router.removeExtension(defaultExtension1.metadata.name);
+        assertEq(router.getAllExtensions().length, defaultExtensionsCount - 1);
+
+        assertEq(router.getImplementationForFunction(MultiplyDivide.multiplyNumber.selector), address(0));
+        assertEq(router.getImplementationForFunction(MultiplyDivide.divideNumber.selector), address(0));
+
+        Extension memory ext = router.getExtension(defaultExtension1.metadata.name);
+        assertEq(ext.metadata.name, "");
+        assertEq(ext.metadata.metadataURI, "");
+        assertEq(ext.metadata.implementation, address(0));
+        assertEq(ext.functions.length, 0);
+    }
 
     /// @notice Remove a non-default extension.
+    function test_state_removeExtension() public {
+        // Create Extension struct
+        Extension memory extension;
+
+        // Set metadata
+        extension.metadata.name = "IncrementDecrement";
+        extension.metadata.metadataURI = "ipfs://IncrementDecrement";
+        extension.metadata.implementation = address(new IncrementDecrement());   
+
+        // Set functions
+        extension.functions = new ExtensionFunction[](2);
+        extension.functions[0] = ExtensionFunction(
+            IncrementDecrementGet.incrementNumber.selector,
+            "incrementNumber()"
+        );
+        extension.functions[1] = ExtensionFunction(
+            IncrementDecrementGet.decrementNumber.selector,
+            "decrementNumber()"
+        );
+
+        // Call: addExtension
+        router.addExtension(extension);
+        _validateExtensionDataOnContract(extension);
+
+        // Create Extension struct to replace existing extension
+        Extension memory updatedExtension;
+
+        updatedExtension.metadata = extension.metadata;
+        updatedExtension.metadata.implementation = address(new IncrementDecrementGet());
+        
+        updatedExtension.functions = new ExtensionFunction[](3);
+        updatedExtension.functions[0] = extension.functions[0];
+        updatedExtension.functions[1] = extension.functions[1];
+        updatedExtension.functions[2] = ExtensionFunction(
+            IncrementDecrementGet.getNumber.selector,
+            "getNumber()"
+        );
+
+        // Call: addExtension
+        router.replaceExtension(updatedExtension);
+        _validateExtensionDataOnContract(updatedExtension);
+
+        // Call: removeExtension
+
+        assertEq(router.getAllExtensions().length, 1);
+
+        router.removeExtension(updatedExtension.metadata.name);
+        assertEq(router.getAllExtensions().length, 0);
+
+        assertEq(router.getImplementationForFunction(IncrementDecrementGet.incrementNumber.selector), address(0));
+        assertEq(router.getImplementationForFunction(IncrementDecrementGet.decrementNumber.selector), address(0));
+        assertEq(router.getImplementationForFunction(IncrementDecrementGet.getNumber.selector), address(0));
+
+        Extension memory ext = router.getExtension(updatedExtension.metadata.name);
+        assertEq(ext.metadata.name, "");
+        assertEq(ext.metadata.metadataURI, "");
+        assertEq(ext.metadata.implementation, address(0));
+        assertEq(ext.functions.length, 0);
+    }
 
     /// @notice Revert: remove a non existent extension.
+    function test_revert_removeExtension_extensionDoesNotExist() public {
+        vm.expectRevert("ExtensionManager: extension does not exist.");
+        router.removeExtension("SomeExtension");
+    }
 
     /// @notice Revert: remove an extension with an empty name.
+    function test_revert_removeExtension_emptyName() public {
+        vm.expectRevert("ExtensionManager: extension does not exist.");
+        router.removeExtension("");
+    }
 
     /*///////////////////////////////////////////////////////////////
-                    Disabling function in extensions
+                    Disabling function in extension
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Disable a function in a default extension.
+    function test_state_disableFunctionInExtension_defaultExtension() public {
+
+        // Call: disableFunctionInExtension
+        router.disableFunctionInExtension(defaultExtension1.metadata.name, defaultExtension1.functions[0].selector);
+
+        // Post call checks
+        assertEq(router.getImplementationForFunction(MultiplyDivide.multiplyNumber.selector), address(0));
+        assertEq(router.getExtension(defaultExtension1.metadata.name).functions.length, 1);
+
+        Extension memory updatedExtension;
+        updatedExtension.metadata = defaultExtension1.metadata;
+        updatedExtension.functions = new ExtensionFunction[](1);
+        updatedExtension.functions[0] = defaultExtension1.functions[1];
+
+        _validateExtensionDataOnContract(updatedExtension);
+    }
 
     /// @notice Disable a function in a non-default extension.
+    function test_state_disableFunctionInExtension() public {
+        // Create Extension struct
+        Extension memory extension;
+        
+        // Set metadata
+        extension.metadata.name = "IncrementDecrement";
+        extension.metadata.metadataURI = "ipfs://IncrementDecrement";
+        extension.metadata.implementation = address(new IncrementDecrementGet());
+
+        // Set functions
+        extension.functions = new ExtensionFunction[](2);
+
+        extension.functions[0] = ExtensionFunction(
+            IncrementDecrementGet.incrementNumber.selector,
+            "incrementNumber()"
+        );
+        extension.functions[1] = ExtensionFunction(
+            IncrementDecrementGet.decrementNumber.selector,
+            "decrementNumber()"
+        );
+
+        // Call: addExtension
+        router.addExtension(extension);
+        _validateExtensionDataOnContract(extension);
+
+        // Pre-call checks
+        assertEq(router.getImplementationForFunction(IncrementDecrementGet.incrementNumber.selector), extension.metadata.implementation);
+        assertEq(router.getExtension(extension.metadata.name).functions.length, 2);
+
+        // Call: disableFunctionInExtension
+        router.disableFunctionInExtension(extension.metadata.name, IncrementDecrementGet.incrementNumber.selector);
+
+        // Post call checks
+        assertEq(router.getImplementationForFunction(IncrementDecrementGet.incrementNumber.selector), address(0));
+        assertEq(router.getExtension(extension.metadata.name).functions.length, 1);
+
+        Extension memory updatedExtension;
+        updatedExtension.metadata = extension.metadata;
+        updatedExtension.functions = new ExtensionFunction[](1);
+        updatedExtension.functions[0] = extension.functions[1];
+
+        _validateExtensionDataOnContract(updatedExtension);
+    }
 
     /// @notice Disable the receive function.
+    function test_state_disableFunctionInExtension_receiveFunction() public {
+        // Create Extension struct
+        Extension memory extension;
+        
+        // Set metadata
+        extension.metadata.name = "IncrementDecrementReceive";
+        extension.metadata.metadataURI = "ipfs://IncrementDecrementReceive";
+        extension.metadata.implementation = address(new IncrementDecrementReceive());
+
+        // Set functions
+        extension.functions = new ExtensionFunction[](2);
+
+        extension.functions[0] = ExtensionFunction(
+            bytes4(0),
+            "receive()"
+        );
+        extension.functions[1] = ExtensionFunction(
+            IncrementDecrementGet.decrementNumber.selector,
+            "decrementNumber()"
+        );
+
+        // Call: addExtension
+        router.addExtension(extension);
+        _validateExtensionDataOnContract(extension);
+
+        address sender = address(0x123);
+        vm.deal(sender, 100 ether);
+
+        uint256 balBefore = (address(router)).balance;
+        uint256 amount = 1 ether;
+
+        vm.prank(sender);
+        address(router).call{value: 1 ether}("");
+
+        assertEq((address(router)).balance, balBefore + amount);
+
+        // Pre-call checks
+        assertEq(router.getImplementationForFunction(bytes4(0)), extension.metadata.implementation);
+        assertEq(router.getExtension(extension.metadata.name).functions.length, 2);
+
+        // Call: disableFunctionInExtension
+        router.disableFunctionInExtension(extension.metadata.name, bytes4(0));
+
+        // Post call checks
+        assertEq(router.getImplementationForFunction(bytes4(0)), address(0));
+        assertEq(router.getExtension(extension.metadata.name).functions.length, 1);
+
+        Extension memory updatedExtension;
+        updatedExtension.metadata = extension.metadata;
+        updatedExtension.functions = new ExtensionFunction[](1);
+        updatedExtension.functions[0] = extension.functions[1];
+
+        _validateExtensionDataOnContract(updatedExtension);
+
+        vm.expectRevert();
+        vm.prank(sender);
+        address(router).call{value: 1 ether}("");
+    }
 
     /// @notice Revert: disable a function in a non existent extension.
+    function test_revert_disableFunctionInExtension_extensionDoesNotExist() public {
+        // Call: disableFunctionInExtension
+        vm.expectRevert("ExtensionManager: extension does not exist.");
+        router.disableFunctionInExtension("SomeExtension", IncrementDecrementGet.incrementNumber.selector);
+    }
 
     /// @notice Revert: disable a function in an extension with an empty name.
+    function test_revert_disableFunctionInExtension_extensionDoesNotExist() public {
+        // Call: disableFunctionInExtension
+        vm.expectRevert("ExtensionManager: extension does not exist.");
+        router.disableFunctionInExtension("", IncrementDecrementGet.incrementNumber.selector);
+    }
 
     /// @notice Revert: disable a function in an extension that does not have that function.
+    function test_revert_disableFunctionInExtension_functionDoesNotExistInExtension() public {
+        // Create Extension struct
+        Extension memory extension;
+        
+        // Set metadata
+        extension.metadata.name = "IncrementDecrement";
+        extension.metadata.metadataURI = "ipfs://IncrementDecrement";
+        extension.metadata.implementation = address(new IncrementDecrementGet());
+
+        // Set functions
+        extension.functions = new ExtensionFunction[](2);
+
+        extension.functions[0] = ExtensionFunction(
+            IncrementDecrementGet.incrementNumber.selector,
+            "incrementNumber()"
+        );
+        extension.functions[1] = ExtensionFunction(
+            IncrementDecrementGet.decrementNumber.selector,
+            "decrementNumber()"
+        );
+
+        // Call: addExtension
+        router.addExtension(extension);
+        _validateExtensionDataOnContract(extension);
+
+        // Pre-call checks
+        assertEq(router.getImplementationForFunction(IncrementDecrementGet.incrementNumber.selector), extension.metadata.implementation);
+        assertEq(router.getExtension(extension.metadata.name).functions.length, 2);
+
+        // Call: disableFunctionInExtension
+        vm.expectRevert("ExtensionManager: incorrect extension.");
+        router.disableFunctionInExtension(extension.metadata.name, IncrementDecrementGet.getNumber.selector);
+    }
 
     /*///////////////////////////////////////////////////////////////
-                    Enable function in extensions
+                    Enable function in extension
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Enable a function in a default extension.
+    function test_state_enableFunctionInExtension_defaultExtension() public {
+        // Call: disableFunctionInExtension
+        router.disableFunctionInExtension(defaultExtension1.metadata.name, defaultExtension1.functions[0].selector);
+
+        assertEq(router.getImplementationForFunction(MultiplyDivide.multiplyNumber.selector), address(0));
+        assertEq(router.getExtension(defaultExtension1.metadata.name).functions.length, defaultExtension1.functions.length - 1);
+
+        // Call: enableFunctionInExtension
+        ExtensionFunction memory fn = ExtensionFunction(
+            MultiplyDivide.multiplyNumber.selector,
+            "multiplyNumber(uint256)"
+        );
+        router.enableFunctionInExtension(defaultExtension1.metadata.name, fn);
+
+        // Post call checks
+        assertEq(router.getImplementationForFunction(MultiplyDivide.multiplyNumber.selector), defaultExtension1.metadata.implementation);
+        assertEq(router.getExtension(defaultExtension1.metadata.name).functions.length, defaultExtension1.functions.length);
+
+        Extension memory updatedExtension;
+        updatedExtension.metadata = defaultExtension1.metadata;
+        updatedExtension.functions = new ExtensionFunction[](3);
+        updatedExtension.functions[0] = defaultExtension1.functions[0];
+        updatedExtension.functions[1] = defaultExtension1.functions[1];
+
+        _validateExtensionDataOnContract(updatedExtension);
+
+        // Verify functionality
+        MultiplyDivide inc = MultiplyDivide(address(router));
+
+        assertEq(inc.multiplyNumber(2), 4);
+        assertEq(inc.multiplyNumber(3), 12);
+    }
 
     /// @notice Enable a function in a non-default extension.
+    function test_state_enableFunctionInExtension() public {
+        // Create Extension struct
+        Extension memory extension;
+        
+        // Set metadata
+        extension.metadata.name = "IncrementDecrement";
+        extension.metadata.metadataURI = "ipfs://IncrementDecrement";
+        extension.metadata.implementation = address(new IncrementDecrementGet());
+
+        // Set functions
+        extension.functions = new ExtensionFunction[](2);
+
+        extension.functions[0] = ExtensionFunction(
+            IncrementDecrementGet.incrementNumber.selector,
+            "incrementNumber()"
+        );
+        extension.functions[1] = ExtensionFunction(
+            IncrementDecrementGet.decrementNumber.selector,
+            "decrementNumber()"
+        );
+
+        // Call: addExtension
+        router.addExtension(extension);
+        _validateExtensionDataOnContract(extension);
+
+        // Pre-call checks
+        assertEq(router.getImplementationForFunction(IncrementDecrementGet.getNumber.selector), address(0));
+        assertEq(router.getExtension(extension.metadata.name).functions.length, 2);
+
+        // Call: enableFunctionInExtension
+        ExtensionFunction memory fn = ExtensionFunction(
+            IncrementDecrementGet.getNumber.selector,
+            "getNumber()"
+        );
+        router.enableFunctionInExtension(extension.metadata.name, fn);
+
+        // Post call checks
+        assertEq(router.getImplementationForFunction(IncrementDecrementGet.getNumber.selector), extension.metadata.implementation);
+        assertEq(router.getExtension(extension.metadata.name).functions.length, 3);
+
+        Extension memory updatedExtension;
+        updatedExtension.metadata = extension.metadata;
+        updatedExtension.functions = new ExtensionFunction[](3);
+        updatedExtension.functions[0] = extension.functions[0];
+        updatedExtension.functions[1] = extension.functions[1];
+        updatedExtension.functions[2] = fn;
+
+        _validateExtensionDataOnContract(updatedExtension);
+
+        // Verify functionality
+        IncrementDecrementGet inc = IncrementDecrementGet(address(router));
+
+        assertEq(inc.getNumber(), 0);
+
+        inc.incrementNumber();
+        assertEq(inc.getNumber(), 1);
+        
+        inc.incrementNumber();
+        assertEq(inc.getNumber(), 2);
+
+        inc.decrementNumber();
+        assertEq(inc.getNumber(), 1);
+    }
     
     /// @notice Enable the receive function.
+    function test_state_enableFunctionInExtension_receiveFunction() public {
+        // Create Extension struct
+        Extension memory extension;
+        
+        // Set metadata
+        extension.metadata.name = "IncrementDecrementReceive";
+        extension.metadata.metadataURI = "ipfs://IncrementDecrementReceive";
+        extension.metadata.implementation = address(new IncrementDecrementReceive());
+
+        // Set functions
+        extension.functions = new ExtensionFunction[](2);
+
+        extension.functions[0] = ExtensionFunction(
+            IncrementDecrementReceive.incrementNumber.selector,
+            "incrementNumber()"
+        );
+        extension.functions[1] = ExtensionFunction(
+            IncrementDecrementReceive.decrementNumber.selector,
+            "decrementNumber()"
+        );
+
+        // Call: addExtension
+        router.addExtension(extension);
+        _validateExtensionDataOnContract(extension);
+
+        // Pre-call checks
+        assertEq(router.getImplementationForFunction(bytes4(0)), address(0));
+        assertEq(router.getExtension(extension.metadata.name).functions.length, 2);
+
+        address sender = address(0x123);
+        vm.deal(sender, 100 ether);
+
+        vm.expectRevert();
+        vm.prank(sender);
+        address(router).call{value: 1 ether}("");
+
+        // Call: enableFunctionInExtension
+        ExtensionFunction memory fn = ExtensionFunction(
+            bytes4(0),
+            "receive()"
+        );
+        router.enableFunctionInExtension(extension.metadata.name, fn);
+
+        // Post call checks
+        assertEq(router.getImplementationForFunction(bytes4(0)), extension.metadata.implementation);
+        assertEq(router.getExtension(extension.metadata.name).functions.length, 3);
+
+        Extension memory updatedExtension;
+        updatedExtension.metadata = extension.metadata;
+        updatedExtension.functions = new ExtensionFunction[](3);
+        updatedExtension.functions[0] = extension.functions[0];
+        updatedExtension.functions[1] = extension.functions[1];
+        updatedExtension.functions[2] = fn;
+
+        _validateExtensionDataOnContract(updatedExtension);
+
+        // Verify functionality
+        uint256 balBefore = (address(router)).balance;
+        uint256 amount = 1 ether;
+
+        vm.prank(sender);
+        address(router).call{value: 1 ether}("");
+
+        assertEq((address(router)).balance, balBefore + amount);
+    }
 
     /// @notice Revert: enable a function in a non existent extension.
+    function test_revert_enableFunctionInExtension_extensionDoesNotExist() public {
+        // Call: enableFunctionInExtension
+        ExtensionFunction memory fn = ExtensionFunction(
+            IncrementDecrementGet.getNumber.selector,
+            "getNumber()"
+        );
+
+        vm.expectRevert("ExtensionManager: extension does not exist.");
+        router.enableFunctionInExtension("SomeExtension", fn);
+    }
 
     /// @notice Revert: enable a function in an extension with an empty name.
+    function test_revert_enableFunctionInExtension_emptyName() public {
+        // Call: enableFunctionInExtension
+        ExtensionFunction memory fn = ExtensionFunction(
+            IncrementDecrementGet.getNumber.selector,
+            "getNumber()"
+        );
+
+        vm.expectRevert("ExtensionManager: extension does not exist.");
+        router.enableFunctionInExtension("", fn);
+    }
 
     /// @notice Revert: enable a function with empty function signature.
+    function test_revert_enableFunctionInExtension_emptyFunctionSignature() public {
+        // Create Extension struct
+        Extension memory extension;
+        
+        // Set metadata
+        extension.metadata.name = "IncrementDecrement";
+        extension.metadata.metadataURI = "ipfs://IncrementDecrement";
+        extension.metadata.implementation = address(new IncrementDecrementGet());
+
+        // Set functions
+        extension.functions = new ExtensionFunction[](2);
+
+        extension.functions[0] = ExtensionFunction(
+            IncrementDecrementGet.incrementNumber.selector,
+            "incrementNumber()"
+        );
+        extension.functions[1] = ExtensionFunction(
+            IncrementDecrementGet.decrementNumber.selector,
+            "decrementNumber()"
+        );
+
+        // Call: addExtension
+        router.addExtension(extension);
+        _validateExtensionDataOnContract(extension);
+
+        // Pre-call checks
+        assertEq(router.getImplementationForFunction(IncrementDecrementGet.getNumber.selector), address(0));
+        assertEq(router.getExtension(extension.metadata.name).functions.length, 2);
+
+        // Call: enableFunctionInExtension
+        ExtensionFunction memory fn = ExtensionFunction(
+            IncrementDecrementGet.getNumber.selector,
+            ""
+        );
+
+        vm.expectRevert("ExtensionManager: fn selector and signature mismatch.");
+        router.enableFunctionInExtension(extension.metadata.name, fn);
+    }
+
+    /// @notice Revert: enable a function with empty function selector.
+    function test_revert_enableFunctionInExtension_emptyFunctionSelector() public {
+        // Create Extension struct
+        Extension memory extension;
+        
+        // Set metadata
+        extension.metadata.name = "IncrementDecrement";
+        extension.metadata.metadataURI = "ipfs://IncrementDecrement";
+        extension.metadata.implementation = address(new IncrementDecrementGet());
+
+        // Set functions
+        extension.functions = new ExtensionFunction[](2);
+
+        extension.functions[0] = ExtensionFunction(
+            IncrementDecrementGet.incrementNumber.selector,
+            "incrementNumber()"
+        );
+        extension.functions[1] = ExtensionFunction(
+            IncrementDecrementGet.decrementNumber.selector,
+            "decrementNumber()"
+        );
+
+        // Call: addExtension
+        router.addExtension(extension);
+        _validateExtensionDataOnContract(extension);
+
+        // Pre-call checks
+        assertEq(router.getImplementationForFunction(IncrementDecrementGet.getNumber.selector), address(0));
+        assertEq(router.getExtension(extension.metadata.name).functions.length, 2);
+
+        // Call: enableFunctionInExtension
+        ExtensionFunction memory fn = ExtensionFunction(
+            bytes4(0),
+            "getNumber()"
+        );
+
+        vm.expectRevert("ExtensionManager: fn selector and signature mismatch.");
+        router.enableFunctionInExtension(extension.metadata.name, fn);
+    }
 
     /// @notice Revert: enable a function that already exists in another extension.
+    function test_revert_enableFunctionInExtension_functionAlreadyExistsInAnotherExtension() public {
+        // Create Extension struct
+        Extension memory extension1;
+        Extension memory extension2;
+
+        // Set metadata
+        extension1.metadata.name = "IncrementDecrement";
+        extension1.metadata.metadataURI = "ipfs://IncrementDecrement";
+        extension1.metadata.implementation = address(new IncrementDecrement());   
+
+        extension2.metadata.name = "IncrementDecrementGet";
+        extension2.metadata.metadataURI = "ipfs://IncrementDecrementGet";
+        extension2.metadata.implementation = address(new IncrementDecrementGet());
+
+        // Set functions
+        extension1.functions = new ExtensionFunction[](2);
+        extension1.functions[0] = ExtensionFunction(
+            IncrementDecrementGet.incrementNumber.selector,
+            "incrementNumber()"
+        );
+        extension1.functions[1] = ExtensionFunction(
+            IncrementDecrementGet.decrementNumber.selector,
+            "decrementNumber()"
+        );
+        
+        extension2.functions = new ExtensionFunction[](1);
+        extension2.functions[0] = ExtensionFunction(
+            IncrementDecrementGet.getNumber.selector,
+            "getNumber()"
+        );
+
+        // Call: addExtension
+        router.addExtension(extension1);
+        router.addExtension(extension2);
+
+        // Call: enableFunctionInExtension
+        ExtensionFunction memory fn = ExtensionFunction(
+            IncrementDecrementGet.getNumber.selector,
+            "getNumber()"
+        );
+
+        vm.expectRevert("ExtensionManager: function impl already exists.");
+        router.enableFunctionInExtension(extension1.metadata.name, fn);
+    }
 
     /// @notice Revert: enable a function that already exists in a default extension.
+    function test_revert_enableFunctionInExtension_functionAlreadyExistsInDefaultExtension() public {
+        // Create Extension struct
+        Extension memory extension;
+
+        // Set metadata
+        extension.metadata.name = "IncrementDecrementMultiply";
+        extension.metadata.metadataURI = "ipfs://IncrementDecrementMultiply";
+        extension.metadata.implementation = address(new IncrementDecrementMultiply());   
+
+        // Set functions
+        extension.functions = new ExtensionFunction[](2);
+        extension.functions[0] = ExtensionFunction(
+            IncrementDecrementGet.incrementNumber.selector,
+            "incrementNumber()"
+        );
+        extension.functions[1] = ExtensionFunction(
+            IncrementDecrementGet.decrementNumber.selector,
+            "decrementNumber()"
+        );
+        
+        // Call: addExtension
+        router.addExtension(extension);
+
+        // Call: enableFunctionInExtension
+        ExtensionFunction memory fn = ExtensionFunction(
+            IncrementDecrementMultiply.multiplyNumber.selector,
+            "multiplyNumber(uint256)"
+        );
+
+        vm.expectRevert("ExtensionManager: function impl already exists.");
+        router.enableFunctionInExtension(extension1.metadata.name, fn);
+    }
 
     /*///////////////////////////////////////////////////////////////
                         Scenario tests
@@ -233,12 +1690,91 @@ contract BaseRouterUniTest is Test, IExtension {
     /// The following tests are for scenarios that may occur in production use of a base router.
 
     /// @notice Upgrade a buggy function in a default extension.
+    function test_scenario_upgradeBuggyFunction_defaultExtension() public {
+        // Disable buggy function in extension
+        router.disableFunctionInExtension(defaultExtension1.metadata.name, defaultExtension1.functions[0].selector);
+
+        assertEq(router.getImplementationForFunction(MultiplyDivide.multiplyNumber.selector), address(0));
+        assertEq(router.getExtension(defaultExtension1.metadata.name).functions.length, defaultExtension1.functions.length - 1);
+
+        // Create new extension with fixed function
+        Extension memory extension;
+
+        // Set metadata
+        extension.metadata.name = "MultiplyDivide-Fixed-Multiply";
+        extension.metadata.metadataURI = "ipfs://MultiplyDivide-Fixed-Multiply";
+        extension.metadata.implementation = address(new MultiplyDivide());   
+
+        // Set functions
+        extension.functions = new ExtensionFunction[](1);
+        extension.functions[0] = ExtensionFunction(
+            MultiplyDivide.multiplyNumber.selector,
+            "multiplyNumber(uint256)"
+        );
+
+        // Call: addExtension
+        router.addExtension(extension);
+
+        // Post call checks
+        assertEq(router.getImplementationForFunction(MultiplyDivide.multiplyNumber.selector), extension.metadata.implementation);
+        assertEq(router.getExtension(defaultExtension1.metadata.name).functions.length, extension.functions.length);
+
+        Extension memory updatedExtension;
+        updatedExtension.metadata = defaultExtension1.metadata;
+        updatedExtension.functions = new ExtensionFunction[](1);
+        updatedExtension.functions[0] = defaultExtension1.functions[1];
+
+        _validateExtensionDataOnContract(updatedExtension);
+        _validateExtensionDataOnContract(extension);
+    }
     
     /// @notice Upgrade a buggy function in a non-default extension.
+    function test_scenario_upgradeBuggyFunction() public {
+        // Add extension with buggy function
+        Extension memory extension;
+        
+        extension.metadata.name = "IncrementDecrement";
+        extension.metadata.metadataURI = "ipfs://IncrementDecrement";
+        extension.metadata.implementation = address(new IncrementDecrementGet());
 
-    /// @notice Replace 2 out of n functions in a default extension.
+        extension.functions = new ExtensionFunction[](3);
 
-    /// @notice Add a new extension; one of its functions overrides a function in a default extension.
+        extension.functions[0] = ExtensionFunction(
+            IncrementDecrementGet.incrementNumber.selector,
+            "incrementNumber()"
+        );
+        extension.functions[1] = ExtensionFunction(
+            IncrementDecrementGet.decrementNumber.selector,
+            "decrementNumber()"
+        );
+        extension.functions[2] = ExtensionFunction(
+            IncrementDecrementGet.getNumber.selector,
+            "getNumber()"
+        );
 
-    /// @notice Add a new extension; one of its functions overrides a function in a non-default extension.
+        // Disable buggy function in extension
+        router.disableFunctionInExtension(extension.metadata.name, IncrementDecrementGet.getNumber.selector);
+
+        assertEq(router.getImplementationForFunction(IncrementDecrementGet.getNumber.selector), address(0));
+        assertEq(router.getExtension(extension.metadata.name).functions.length, extension.functions.length - 1);
+
+        // Create new extension with fixed function
+        Extension memory updatedExtension;
+        updatedExtension.metadata = extension.metadata;
+        updatedExtension.functions = new ExtensionFunction[](1);
+        updatedExtension.functions[0] = ExtensionFunction(
+            IncrementDecrementGet.getNumber.selector,
+            "getNumber()"
+        );
+
+        // Call: addExtension
+        router.addExtension(updatedExtension);
+
+        // Post call checks
+
+        assertEq(router.getImplementationForFunction(IncrementDecrementGet.getNumber.selector), updatedExtension.metadata.implementation);
+        assertEq(router.getExtension(extension.metadata.name).functions.length, updatedExtension.functions.length);
+
+        _validateExtensionDataOnContract(updatedExtension);
+    }
 }
