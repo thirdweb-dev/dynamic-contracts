@@ -33,7 +33,7 @@ abstract contract BaseRouter is Router, ExtensionManager {
 
             Extension memory extension = defaults[i];
             // Store: new extension name.
-            require(_extensionManagerStorage().extensionNames.add(extension.metadata.name), "ExtensionManager: extension already exists.");
+            _extensionManagerStorage().extensionNames.add(extension.metadata.name);
 
             // 1. Store: metadata for extension.
             _setMetadataForExtension(extension.metadata.name, extension.metadata);
