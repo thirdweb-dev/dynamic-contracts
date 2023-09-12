@@ -6,7 +6,6 @@ import { IRouterState } from "../interface/IRouterState.sol";
 import { IRouterStateGetters } from "../interface/IRouterStateGetters.sol";
 import { ExtensionManager } from "./ExtensionManager.sol";
 import { DefaultExtensionSet } from "./DefaultExtensionSet.sol";
-import { BaseRouterStorage } from "../lib/BaseRouterStorage.sol";
 import { StringSet } from "../lib/StringSet.sol";
 
 /// @title BaseRouter
