@@ -32,7 +32,7 @@ contract RouterRegistryConstrained is BaseRouter {
     ExtensionRegistry public registry;
 
     /// @dev Cannot initialize with extensions before registry is set, so we pass empty array to base constructor.
-    constructor(address _registry) {
+    constructor(address _registry) BaseRouter(new Extension[](0)) {
         admin = msg.sender;
         registry = ExtensionRegistry(_registry);
     }
