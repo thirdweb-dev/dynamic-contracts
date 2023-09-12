@@ -9,9 +9,14 @@ import "src/interface/IExtension.sol";
 import "src/presets/BaseRouterUni.sol";
 import "./utils/MockContracts.sol";
 
+/// @dev This custom router is written only for testing purposes and must not be used in production.
 contract CustomRouter is BaseRouterUni {
 
     constructor(Extension[] memory _extensions) BaseRouterUni(_extensions) {}
+
+    function initialize() public {
+        __BaseRouter_init();
+    }
 
     /// @dev Returns whether a function can be disabled in an extension in the given execution context.
     function isAuthorizedCallToUpgrade() internal view virtual override returns (bool) {
@@ -64,6 +69,7 @@ contract BaseRouterUniTest is Test, IExtension {
 
         // Deploy BaseRouterUni
         router = BaseRouterUni(payable(address(new CustomRouter(defaultExtensions))));
+        CustomRouter(payable(address(router))).initialize();
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -273,8 +279,6 @@ contract BaseRouterUniTest is Test, IExtension {
         );
 
         // Call: addExtension
-        router.addExtension(extension1);
-
         vm.expectRevert("ExtensionManager: extension already exists.");
         router.addExtension(extension1);
     }
@@ -494,10 +498,11 @@ contract BaseRouterUniTest is Test, IExtension {
         extension1.functions[1] = defaultExtension1.functions[0];
 
         // Call: addExtension
-        router.addExtension(extension1);
-
         vm.expectRevert("ExtensionManager: function impl already exists.");
         router.addExtension(extension1);
+
+        // vm.expectRevert("BaseRouter: function impl already exists.");
+        // router.addExtension(extension1);
     }
 
     /// @notice Revert: add an extension with a function that already exists in another non-default extension.
@@ -1115,16 +1120,15 @@ contract BaseRouterUniTest is Test, IExtension {
             "getNumber()"
         );
 
-        // Call: addExtension
+        // Call: replaceExtension
         router.replaceExtension(updatedExtension);
         _validateExtensionDataOnContract(updatedExtension);
 
         // Call: removeExtension
-
-        assertEq(router.getAllExtensions().length, 1);
+        assertEq(router.getAllExtensions().length, defaultExtensionsCount + 1);
 
         router.removeExtension(updatedExtension.metadata.name);
-        assertEq(router.getAllExtensions().length, 0);
+        assertEq(router.getAllExtensions().length, defaultExtensionsCount);
 
         assertEq(router.getImplementationForFunction(IncrementDecrementGet.incrementNumber.selector), address(0));
         assertEq(router.getImplementationForFunction(IncrementDecrementGet.decrementNumber.selector), address(0));
@@ -1338,21 +1342,17 @@ contract BaseRouterUniTest is Test, IExtension {
         assertEq(router.getExtension(defaultExtension1.metadata.name).functions.length, defaultExtension1.functions.length - 1);
 
         // Call: enableFunctionInExtension
-        ExtensionFunction memory fn = ExtensionFunction(
-            MultiplyDivide.multiplyNumber.selector,
-            "multiplyNumber(uint256)"
-        );
-        router.enableFunctionInExtension(defaultExtension1.metadata.name, fn);
+        router.enableFunctionInExtension(defaultExtension1.metadata.name, defaultExtension1.functions[0]);
 
         // Post call checks
-        assertEq(router.getImplementationForFunction(MultiplyDivide.multiplyNumber.selector), defaultExtension1.metadata.implementation);
+        assertEq(router.getImplementationForFunction(defaultExtension1.functions[0].functionSelector), defaultExtension1.metadata.implementation);
         assertEq(router.getExtension(defaultExtension1.metadata.name).functions.length, defaultExtension1.functions.length);
 
         Extension memory updatedExtension;
         updatedExtension.metadata = defaultExtension1.metadata;
-        updatedExtension.functions = new ExtensionFunction[](3);
-        updatedExtension.functions[0] = defaultExtension1.functions[0];
-        updatedExtension.functions[1] = defaultExtension1.functions[1];
+        updatedExtension.functions = new ExtensionFunction[](2);
+        updatedExtension.functions[0] = defaultExtension1.functions[1];
+        updatedExtension.functions[1] = defaultExtension1.functions[0];
 
         _validateExtensionDataOnContract(updatedExtension);
     }
@@ -1742,6 +1742,9 @@ contract BaseRouterUniTest is Test, IExtension {
             "getNumber()"
         );
 
+        // Call: addExtension
+        router.addExtension(extension);
+
         // Disable buggy function in extension
         router.disableFunctionInExtension(extension.metadata.name, IncrementDecrementGet.getNumber.selector);
 
@@ -1751,6 +1754,7 @@ contract BaseRouterUniTest is Test, IExtension {
         // Create new extension with fixed function
         Extension memory updatedExtension;
         updatedExtension.metadata = extension.metadata;
+        updatedExtension.metadata.name = "IncrementDecrement-getNumber-fixed";
         updatedExtension.functions = new ExtensionFunction[](1);
         updatedExtension.functions[0] = ExtensionFunction(
             IncrementDecrementGet.getNumber.selector,
