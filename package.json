@@ -20,5 +20,7 @@
     "**/*.sol"
   ],
   "dependencies": {},
-  "scripts": {}
+  "scripts": {
+    "gas": "forge test --mc Benchmark --gas-report > gasreport.txt"
+  }
 }

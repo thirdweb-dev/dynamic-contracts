@@ -1,4 +1,7 @@
 [profile.default]
+gas_reports = [
+    "BaseRouterBenchmark"
+]
 libs = ['lib']
 out = 'out'
 remappings = []
