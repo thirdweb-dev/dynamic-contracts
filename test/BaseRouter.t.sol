@@ -6,13 +6,13 @@ pragma solidity ^0.8.0;
 import "forge-std/Test.sol";
 
 import "src/interface/IExtension.sol";
-import "src/presets/BaseRouterUni.sol";
+import "src/presets/BaseRouter.sol";
 import "./utils/MockContracts.sol";
 
 /// @dev This custom router is written only for testing purposes and must not be used in production.
-contract CustomRouter is BaseRouterUni {
+contract CustomRouter is BaseRouter {
 
-    constructor(Extension[] memory _extensions) BaseRouterUni(_extensions) {}
+    constructor(Extension[] memory _extensions) BaseRouter(_extensions) {}
 
     function initialize() public {
         __BaseRouter_init();
@@ -24,9 +24,9 @@ contract CustomRouter is BaseRouterUni {
     }
 }
 
-contract BaseRouterUniTest is Test, IExtension {
+contract BaseRouterTest is Test, IExtension {
 
-    BaseRouterUni internal router;
+    BaseRouter internal router;
 
     Extension internal defaultExtension1;
     Extension internal defaultExtension2;
@@ -67,8 +67,8 @@ contract BaseRouterUniTest is Test, IExtension {
         defaultExtensions[0] = defaultExtension1;
         defaultExtensions[1] = defaultExtension2;
 
-        // Deploy BaseRouterUni
-        router = BaseRouterUni(payable(address(new CustomRouter(defaultExtensions))));
+        // Deploy BaseRouter
+        router = BaseRouter(payable(address(new CustomRouter(defaultExtensions))));
         CustomRouter(payable(address(router))).initialize();
     }
 

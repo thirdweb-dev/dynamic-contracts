@@ -13,7 +13,7 @@ import { StringSet } from "../lib/StringSet.sol";
 /// @author thirdweb (https://github.com/thirdweb-dev/dynamic-contracts)
 /// @notice A router with an API to manage its extensions.
 
-abstract contract BaseRouterUni is Router, ExtensionManager {
+abstract contract BaseRouter is Router, ExtensionManager {
 
     using StringSet for StringSet.Set;
 
@@ -34,7 +34,7 @@ abstract contract BaseRouterUni is Router, ExtensionManager {
 
             Extension memory extension = defaults[i];
             // Store: new extension name.
-        require(_extensionManagerStorage().extensionNames.add(extension.metadata.name), "ExtensionManager: extension already exists.");
+            require(_extensionManagerStorage().extensionNames.add(extension.metadata.name), "ExtensionManager: extension already exists.");
 
             // 1. Store: metadata for extension.
             _setMetadataForExtension(extension.metadata.name, extension.metadata);

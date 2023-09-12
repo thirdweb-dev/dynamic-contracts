@@ -3,7 +3,7 @@
 
 pragma solidity ^0.8.0;
 
-import "../presets/BaseRouterUni.sol";
+import "../presets/BaseRouter.sol";
 
 /**
  *  This smart contract is an EXAMPLE, and is not meant for use in production.
@@ -26,13 +26,13 @@ contract ExtensionRegistry {
 /**
  *  This smart contract is an EXAMPLE, and is not meant for use in production.
  */
-contract RouterRegistryConstrained is BaseRouterUni {
+contract RouterRegistryConstrained is BaseRouter {
 
     address public admin;
     ExtensionRegistry public registry;
 
     /// @dev Cannot initialize with extensions before registry is set, so we pass empty array to base constructor.
-    constructor(address _registry) BaseRouterUni(new Extension[](0)) {
+    constructor(address _registry) BaseRouter(new Extension[](0)) {
         admin = msg.sender;
         registry = ExtensionRegistry(_registry);
     }
