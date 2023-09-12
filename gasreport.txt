@@ -1,0 +1,20 @@
+No files changed, compilation skipped
+
+Running 13 tests for test/BaseRouterBenchmark.t.sol:BaseRouterBenchmarkTest
+[32m[PASS][0m test_scenario_upgradeBuggyFunction() (gas: 394192)
+[32m[PASS][0m test_scenario_upgradeBuggyFunction_defaultExtension() (gas: 231369)
+[32m[PASS][0m test_state_addExtension() (gas: 510765)
+[32m[PASS][0m test_state_addExtension_tenExtensionsWithFiveFunctionsEach() (gas: 510766)
+[32m[PASS][0m test_state_disableFunctionInExtension() (gas: 14273)
+[32m[PASS][0m test_state_disableFunctionInExtension_defaultExtension() (gas: 52944)
+[32m[PASS][0m test_state_enableFunctionInExtension() (gas: 129843)
+[32m[PASS][0m test_state_enableFunctionInExtension_defaultExtension() (gas: 18840)
+[32m[PASS][0m test_state_initialize_oneExtensionOneFunction() (gas: 5890282)
+[32m[PASS][0m test_state_removeExtension() (gas: 297476)
+[32m[PASS][0m test_state_removeExtension_defautlExtension() (gas: 98129)
+[32m[PASS][0m test_state_replaceExtension() (gas: 297457)
+[32m[PASS][0m test_state_replaceExtension_defaultExtension() (gas: 266401)
+Test result: [32mok[0m. [32m13[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 3.04ms
+
+ 
+Ran 1 test suites: [32m13[0m tests passed, [31m0[0m failed, [33m0[0m skipped (13 total tests)
