@@ -27,6 +27,10 @@ abstract contract BaseRouter is Router, ExtensionManager {
 
     /// @notice Initialize the Router with a set of default extensions.
     function __BaseRouter_init() internal {
+        if(defaultExtensions == address(0)) {
+            return;
+        }
+        
         Extension[] memory defaults = IRouterState(defaultExtensions).getAllExtensions();
 
         for(uint256 i = 0; i < defaults.length; i += 1) {
