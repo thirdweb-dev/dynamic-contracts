@@ -219,7 +219,7 @@ contract BaseRouterTest is Test, IExtension {
     }
 
     /// @notice Check with multiple extensions extension with ~50 functions in total
-    function test_benchmark_deployBaseRouter_multipleExtensions() external {
+    function test_state_deployBaseRouter_multipleExtensions() external {
         Extension[] memory defaultExtensionsNew = new Extension[](3);
         defaultExtensionsNew[0] = defaultExtension3;
         defaultExtensionsNew[1] = defaultExtension4;
@@ -250,7 +250,7 @@ contract BaseRouterTest is Test, IExtension {
     }
 
     /// @notice Check with a single extension with 10 functions
-    function test_benchmark_initializeBaseRouter_singleExtension() external {
+    function test_state_initializeBaseRouter_singleExtension() external {
         // vm.pauseGasMetering();
         Extension[] memory defaultExtensionsNew = new Extension[](1);
         defaultExtensionsNew[0] = defaultExtension3;
@@ -271,7 +271,7 @@ contract BaseRouterTest is Test, IExtension {
     }
 
     /// @notice Check with multiple extensions extension with 50-100 functions in total
-    function test_benchmark_initializeBaseRouter_multipleExtensions() external {
+    function test_state_initializeBaseRouter_multipleExtensions() external {
         // vm.pauseGasMetering();
         Extension[] memory defaultExtensionsNew = new Extension[](3);
         defaultExtensionsNew[0] = defaultExtension3;
