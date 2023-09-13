@@ -25,10 +25,9 @@ abstract contract BaseRouter is Router, ExtensionManager {
     constructor(Extension[] memory _extensions) {
         address pointer;
         if(_extensions.length > 0) {
+            _validateExtensions(_extensions);
             pointer = SSTORE2.write(abi.encode(_extensions));
         }
-
-        _validateExtensions(_extensions);
 
         defaultExtensions = pointer;
     }
@@ -67,14 +66,13 @@ abstract contract BaseRouter is Router, ExtensionManager {
         return getMetadataForFunction(_functionSelector).implementation;
     }
 
-    /// @dev Adds a new extension to the Router.
+    /// @dev Validates default extensions.
     function _validateExtensions(Extension[] memory _extensions) internal {  
         uint256 len = _extensions.length;
         for (uint256 i = 0; i < len; i += 1) {
             // Check: extension namespace must not already exist.
             // Check: provided extension namespace must not be empty.
             // Check: provided extension implementation must be non-zero.
-            // Store: new extension name.
             _checkExtensionValidity(_extensions[i]);
 
             uint256 len = _extensions[i].functions.length;
@@ -84,7 +82,7 @@ abstract contract BaseRouter is Router, ExtensionManager {
         }
     }
 
-    /// @dev Returns whether a new extension can be added in the given execution context.
+    /// @dev Checks whether a new extension can be added in the given execution context.
     function _checkExtensionValidity(Extension memory _extension) internal virtual {
         // Check: provided extension namespace must not be empty.
         require(bytes(_extension.metadata.name).length > 0, "ExtensionManager: empty name.");
