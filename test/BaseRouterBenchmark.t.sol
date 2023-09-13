@@ -90,14 +90,20 @@ contract BaseRouterBenchmarkTest is Test, IExtension {
     }
 
     /*///////////////////////////////////////////////////////////////
-                        Initialze BaseRouter
+                        Deploy / Initialze BaseRouter
     //////////////////////////////////////////////////////////////*/
 
-    function test_state_initialize_oneExtensionOneFunction() external {
+    function test_benchmark_deployBaseRouter() external {
+        Extension[] memory defaultExtensionsNew = new Extension[](1);
+        defaultExtensionsNew[0] = defaultExtension3;
+        CustomRouter routerNew = new CustomRouter(defaultExtensionsNew);
+    }
+
+    function test_benchmark_initializeBaseRouter() external {
         // vm.pauseGasMetering();
-        Extension[] memory defaultExtensions = new Extension[](1);
-        defaultExtensions[0] = defaultExtension3;
-        CustomRouter routerNew = new CustomRouter(defaultExtensions);
+        Extension[] memory defaultExtensionsNew = new Extension[](1);
+        defaultExtensionsNew[0] = defaultExtension3;
+        CustomRouter routerNew = new CustomRouter(defaultExtensionsNew);
         // vm.resumeGasMetering();
 
         uint256 gasBefore = gasleft();
@@ -112,39 +118,7 @@ contract BaseRouterBenchmarkTest is Test, IExtension {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Add an new extension.
-    function test_state_addExtension() public {
-        vm.pauseGasMetering();
-        // Create Extension struct
-        Extension memory extension;
-        
-        // Set metadata
-        extension.metadata.name = "IncrementDecrement";
-        extension.metadata.metadataURI = "ipfs://IncrementDecrement";
-        extension.metadata.implementation = address(new IncrementDecrementGet());
-
-        // Set functions
-        extension.functions = new ExtensionFunction[](3);
-
-        extension.functions[0] = ExtensionFunction(
-            IncrementDecrementGet.incrementNumber.selector,
-            "incrementNumber()"
-        );
-        extension.functions[1] = ExtensionFunction(
-            IncrementDecrementGet.decrementNumber.selector,
-            "decrementNumber()"
-        );
-        extension.functions[2] = ExtensionFunction(
-            IncrementDecrementGet.getNumber.selector,
-            "getNumber()"
-        );
-        vm.resumeGasMetering();
-
-        // Call: addExtension
-        router.addExtension(extension);
-    }
-
-    /// @notice Add an new extension.
-    function test_state_addExtension_tenExtensionsWithFiveFunctionsEach() public {
+    function test_benchmark_addExtension() public {
         vm.pauseGasMetering();
         // Create Extension struct
         Extension memory extension;
@@ -180,7 +154,7 @@ contract BaseRouterBenchmarkTest is Test, IExtension {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Replace a default extension with a new one.
-    function test_state_replaceExtension_defaultExtension() public {
+    function test_benchmark_replaceExtension_defaultExtension() public {
         vm.pauseGasMetering();
         // Create Extension struct to replace existing extension
         Extension memory updatedExtension;
@@ -207,7 +181,7 @@ contract BaseRouterBenchmarkTest is Test, IExtension {
     
 
     /// @notice Replace a non-default extension with a new one.
-    function test_state_replaceExtension() public {
+    function test_benchmark_replaceExtension() public {
         vm.pauseGasMetering();
         // Create Extension struct
         Extension memory extension;
@@ -255,14 +229,14 @@ contract BaseRouterBenchmarkTest is Test, IExtension {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Remove a default extension.
-    function test_state_removeExtension_defautlExtension() public {
+    function test_benchmark_removeExtension_defautlExtension() public {
         // Call: removeExtension
 
         router.removeExtension(defaultExtension1.metadata.name);
     }
 
     /// @notice Remove a non-default extension.
-    function test_state_removeExtension() public {
+    function test_benchmark_removeExtension() public {
         vm.pauseGasMetering();
         // Create Extension struct
         Extension memory extension;
@@ -310,13 +284,13 @@ contract BaseRouterBenchmarkTest is Test, IExtension {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Disable a function in a default extension.
-    function test_state_disableFunctionInExtension_defaultExtension() public {
+    function test_benchmark_disableFunctionInExtension_defaultExtension() public {
         // Call: disableFunctionInExtension
         router.disableFunctionInExtension(defaultExtension1.metadata.name, defaultExtension1.functions[0].functionSelector);
     }
 
     /// @notice Disable a function in a non-default extension.
-    function test_state_disableFunctionInExtension() public {
+    function test_benchmark_disableFunctionInExtension() public {
         vm.pauseGasMetering();
         // Create Extension struct
         Extension memory extension;
@@ -351,7 +325,7 @@ contract BaseRouterBenchmarkTest is Test, IExtension {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Enable a function in a default extension.
-    function test_state_enableFunctionInExtension_defaultExtension() public {
+    function test_benchmark_enableFunctionInExtension_defaultExtension() public {
         vm.pauseGasMetering();
         // Call: disableFunctionInExtension
         router.disableFunctionInExtension(defaultExtension1.metadata.name, defaultExtension1.functions[0].functionSelector);
@@ -362,7 +336,7 @@ contract BaseRouterBenchmarkTest is Test, IExtension {
     }
 
     /// @notice Enable a function in a non-default extension.
-    function test_state_enableFunctionInExtension() public {
+    function test_benchmark_enableFunctionInExtension() public {
         vm.pauseGasMetering();
         // Create Extension struct
         Extension memory extension;
@@ -404,7 +378,7 @@ contract BaseRouterBenchmarkTest is Test, IExtension {
     /// The following tests are for scenarios that may occur in production use of a base router.
 
     /// @notice Upgrade a buggy function in a default extension.
-    function test_scenario_upgradeBuggyFunction_defaultExtension() public {
+    function test_benchmark_upgradeBuggyFunction_defaultExtension() public {
         vm.pauseGasMetering();
         // Disable buggy function in extension
         router.disableFunctionInExtension(defaultExtension1.metadata.name, defaultExtension1.functions[0].functionSelector);
@@ -430,7 +404,7 @@ contract BaseRouterBenchmarkTest is Test, IExtension {
     }
     
     /// @notice Upgrade a buggy function in a non-default extension.
-    function test_scenario_upgradeBuggyFunction() public {
+    function test_benchmark_upgradeBuggyFunction() public {
         vm.pauseGasMetering();
         // Add extension with buggy function
         Extension memory extension;
