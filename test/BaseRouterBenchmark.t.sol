@@ -34,6 +34,8 @@ contract BaseRouterBenchmarkTest is Test, IExtension {
     Extension internal defaultExtension1;
     Extension internal defaultExtension2;
     Extension internal defaultExtension3;
+    Extension internal defaultExtension4;
+    Extension internal defaultExtension5;
 
     uint256 internal defaultExtensionsCount = 2;
 
@@ -51,6 +53,14 @@ contract BaseRouterBenchmarkTest is Test, IExtension {
         defaultExtension3.metadata.name = "RandomExtension";
         defaultExtension3.metadata.metadataURI = "ipfs://RandomExtension";
         defaultExtension3.metadata.implementation = address(0x3456);
+
+        defaultExtension4.metadata.name = "RandomExtension2";
+        defaultExtension4.metadata.metadataURI = "ipfs://RandomExtension2";
+        defaultExtension4.metadata.implementation = address(0x5678);
+
+        defaultExtension5.metadata.name = "RandomExtension3";
+        defaultExtension5.metadata.metadataURI = "ipfs://RandomExtension3";
+        defaultExtension5.metadata.implementation = address(0x7890);
 
         // Set functions
 
@@ -80,6 +90,24 @@ contract BaseRouterBenchmarkTest is Test, IExtension {
             ));
         }
 
+        for(uint256 i = 0; i < 20; i++) {
+            string memory functionSignature = string(abi.encodePacked("randomFunctionNew", i.toString(), "(uint256,string,bytes,(uint256,uint256,bool))"));
+            bytes4 selector = bytes4(keccak256(bytes(functionSignature)));
+            defaultExtension4.functions.push(ExtensionFunction(
+                selector,
+                functionSignature
+            ));
+        }
+
+        for(uint256 i = 0; i < 30; i++) {
+            string memory functionSignature = string(abi.encodePacked("randomFunctionAnother", i.toString(), "(uint256,string,address[])"));
+            bytes4 selector = bytes4(keccak256(bytes(functionSignature)));
+            defaultExtension5.functions.push(ExtensionFunction(
+                selector,
+                functionSignature
+            ));
+        }
+
         Extension[] memory defaultExtensions = new Extension[](2);
         defaultExtensions[0] = defaultExtension1;
         defaultExtensions[1] = defaultExtension2;
@@ -93,16 +121,66 @@ contract BaseRouterBenchmarkTest is Test, IExtension {
                         Deploy / Initialze BaseRouter
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Check with a single extension with 10 functions
     function test_benchmark_deployBaseRouter() external {
         Extension[] memory defaultExtensionsNew = new Extension[](1);
         defaultExtensionsNew[0] = defaultExtension3;
         CustomRouter routerNew = new CustomRouter(defaultExtensionsNew);
+
+        uint256 size;
+        address defaultExtensions = routerNew.defaultExtensions();
+
+        assembly {
+            size := extcodesize(defaultExtensions)
+        }
+
+        console.log(size);
+        // ensure size of default extension contract doesn't breach the limit
+        assertTrue(size < 24575);
     }
 
-    function test_benchmark_initializeBaseRouter() external {
+    /// @notice Check with multiple extensions extension with ~50 functions in total
+    function test_benchmark_deployBaseRouter_multipleExtensions() external {
+        Extension[] memory defaultExtensionsNew = new Extension[](3);
+        defaultExtensionsNew[0] = defaultExtension3;
+        defaultExtensionsNew[1] = defaultExtension4;
+        defaultExtensionsNew[2] = defaultExtension5;
+        CustomRouter routerNew = new CustomRouter(defaultExtensionsNew);
+
+        uint256 size;
+        address defaultExtensions = routerNew.defaultExtensions();
+
+        assembly {
+            size := extcodesize(defaultExtensions)
+        }
+
+        console.log(size);
+        // ensure size of default extension contract doesn't breach the limit
+        assertTrue(size < 24575);
+    }
+
+    /// @notice Check with a single extension with 10 functions
+    function test_benchmark_initializeBaseRouter_singleExtension() external {
         // vm.pauseGasMetering();
         Extension[] memory defaultExtensionsNew = new Extension[](1);
         defaultExtensionsNew[0] = defaultExtension3;
+        CustomRouter routerNew = new CustomRouter(defaultExtensionsNew);
+        // vm.resumeGasMetering();
+
+        uint256 gasBefore = gasleft();
+        routerNew.initialize();
+        uint256 gasAfter = gasleft();
+        console.log(gasBefore - gasAfter);
+    }
+
+    /// @notice Check with multiple extensions extension with 50-100 functions in total
+    function test_benchmark_initializeBaseRouter_multipleExtensions() external {
+        // vm.pauseGasMetering();
+        Extension[] memory defaultExtensionsNew = new Extension[](3);
+        defaultExtensionsNew[0] = defaultExtension3;
+        defaultExtensionsNew[1] = defaultExtension4;
+        defaultExtensionsNew[2] = defaultExtension5;
+        
         CustomRouter routerNew = new CustomRouter(defaultExtensionsNew);
         // vm.resumeGasMetering();
 

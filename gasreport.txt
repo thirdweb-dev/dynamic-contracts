@@ -1,20 +1,22 @@
 No files changed, compilation skipped
 
-Running 13 tests for test/BaseRouterBenchmark.t.sol:BaseRouterBenchmarkTest
-[32m[PASS][0m test_benchmark_addExtension() (gas: 510743)
-[32m[PASS][0m test_benchmark_deployBaseRouter() (gas: 3352860)
+Running 15 tests for test/BaseRouterBenchmark.t.sol:BaseRouterBenchmarkTest
+[32m[PASS][0m test_benchmark_addExtension() (gas: 510831)
+[32m[PASS][0m test_benchmark_deployBaseRouter() (gas: 3356426)
+[32m[PASS][0m test_benchmark_deployBaseRouter_multipleExtensions() (gas: 7278612)
 [32m[PASS][0m test_benchmark_disableFunctionInExtension() (gas: 14256)
 [32m[PASS][0m test_benchmark_disableFunctionInExtension_defaultExtension() (gas: 52944)
-[32m[PASS][0m test_benchmark_enableFunctionInExtension() (gas: 129844)
-[32m[PASS][0m test_benchmark_enableFunctionInExtension_defaultExtension() (gas: 18857)
-[32m[PASS][0m test_benchmark_initializeBaseRouter() (gas: 4696301)
-[32m[PASS][0m test_benchmark_removeExtension() (gas: 297440)
-[32m[PASS][0m test_benchmark_removeExtension_defautlExtension() (gas: 98146)
+[32m[PASS][0m test_benchmark_enableFunctionInExtension() (gas: 129822)
+[32m[PASS][0m test_benchmark_enableFunctionInExtension_defaultExtension() (gas: 18822)
+[32m[PASS][0m test_benchmark_initializeBaseRouter_multipleExtensions() (gas: 17016974)
+[32m[PASS][0m test_benchmark_initializeBaseRouter_singleExtension() (gas: 4696233)
+[32m[PASS][0m test_benchmark_removeExtension() (gas: 297441)
+[32m[PASS][0m test_benchmark_removeExtension_defautlExtension() (gas: 98128)
 [32m[PASS][0m test_benchmark_replaceExtension() (gas: 297424)
-[32m[PASS][0m test_benchmark_replaceExtension_defaultExtension() (gas: 266334)
-[32m[PASS][0m test_benchmark_upgradeBuggyFunction() (gas: 394171)
-[32m[PASS][0m test_benchmark_upgradeBuggyFunction_defaultExtension() (gas: 231386)
-Test result: [32mok[0m. [32m13[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 2.59ms
+[32m[PASS][0m test_benchmark_replaceExtension_defaultExtension() (gas: 266335)
+[32m[PASS][0m test_benchmark_upgradeBuggyFunction() (gas: 394149)
+[32m[PASS][0m test_benchmark_upgradeBuggyFunction_defaultExtension() (gas: 231368)
+Test result: [32mok[0m. [32m15[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 5.58ms
 
  
-Ran 1 test suites: [32m13[0m tests passed, [31m0[0m failed, [33m0[0m skipped (13 total tests)
+Ran 1 test suites: [32m15[0m tests passed, [31m0[0m failed, [33m0[0m skipped (15 total tests)
