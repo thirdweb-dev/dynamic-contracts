@@ -126,17 +126,6 @@ contract BaseRouterBenchmarkTest is Test, IExtension {
         Extension[] memory defaultExtensionsNew = new Extension[](1);
         defaultExtensionsNew[0] = defaultExtension3;
         CustomRouter routerNew = new CustomRouter(defaultExtensionsNew);
-
-        uint256 size;
-        address defaultExtensions = routerNew.defaultExtensions();
-
-        assembly {
-            size := extcodesize(defaultExtensions)
-        }
-
-        console.log(size);
-        // ensure size of default extension contract doesn't breach the limit
-        assertTrue(size < 24575);
     }
 
     /// @notice Check with multiple extensions extension with ~50 functions in total
@@ -146,17 +135,6 @@ contract BaseRouterBenchmarkTest is Test, IExtension {
         defaultExtensionsNew[1] = defaultExtension4;
         defaultExtensionsNew[2] = defaultExtension5;
         CustomRouter routerNew = new CustomRouter(defaultExtensionsNew);
-
-        uint256 size;
-        address defaultExtensions = routerNew.defaultExtensions();
-
-        assembly {
-            size := extcodesize(defaultExtensions)
-        }
-
-        console.log(size);
-        // ensure size of default extension contract doesn't breach the limit
-        assertTrue(size < 24575);
     }
 
     /// @notice Check with a single extension with 10 functions

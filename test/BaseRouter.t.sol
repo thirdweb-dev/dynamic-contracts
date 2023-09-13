@@ -4,10 +4,12 @@
 pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
+import "lib/sstore2/contracts/SSTORE2.sol";
 
 import "src/interface/IExtension.sol";
 import "src/presets/BaseRouter.sol";
 import "./utils/MockContracts.sol";
+import "./utils/Strings.sol";
 
 /// @dev This custom router is written only for testing purposes and must not be used in production.
 contract CustomRouter is BaseRouter {
@@ -25,11 +27,16 @@ contract CustomRouter is BaseRouter {
 }
 
 contract BaseRouterTest is Test, IExtension {
+    
+    using Strings for uint256;
 
     BaseRouter internal router;
 
     Extension internal defaultExtension1;
     Extension internal defaultExtension2;
+    Extension internal defaultExtension3;
+    Extension internal defaultExtension4;
+    Extension internal defaultExtension5;
 
     uint256 internal defaultExtensionsCount = 2;
 
@@ -43,6 +50,18 @@ contract BaseRouterTest is Test, IExtension {
         defaultExtension2.metadata.name = "AddSubstract";
         defaultExtension2.metadata.metadataURI = "ipfs://AddSubstract";
         defaultExtension2.metadata.implementation = address(new AddSubstract());
+
+        defaultExtension3.metadata.name = "RandomExtension";
+        defaultExtension3.metadata.metadataURI = "ipfs://RandomExtension";
+        defaultExtension3.metadata.implementation = address(0x3456);
+
+        defaultExtension4.metadata.name = "RandomExtension2";
+        defaultExtension4.metadata.metadataURI = "ipfs://RandomExtension2";
+        defaultExtension4.metadata.implementation = address(0x5678);
+
+        defaultExtension5.metadata.name = "RandomExtension3";
+        defaultExtension5.metadata.metadataURI = "ipfs://RandomExtension3";
+        defaultExtension5.metadata.implementation = address(0x7890);
 
         // Set functions
 
@@ -62,6 +81,33 @@ contract BaseRouterTest is Test, IExtension {
             AddSubstract.subtractNumber.selector,
             "subtractNumber(uint256)"
         ));
+
+        for(uint256 i = 0; i < 10; i++) {
+            string memory functionSignature = string(abi.encodePacked("randomFunction", i.toString(), "(uint256)"));
+            bytes4 selector = bytes4(keccak256(bytes(functionSignature)));
+            defaultExtension3.functions.push(ExtensionFunction(
+                selector,
+                functionSignature
+            ));
+        }
+
+        for(uint256 i = 0; i < 20; i++) {
+            string memory functionSignature = string(abi.encodePacked("randomFunctionNew", i.toString(), "(uint256,string,bytes,(uint256,uint256,bool))"));
+            bytes4 selector = bytes4(keccak256(bytes(functionSignature)));
+            defaultExtension4.functions.push(ExtensionFunction(
+                selector,
+                functionSignature
+            ));
+        }
+
+        for(uint256 i = 0; i < 30; i++) {
+            string memory functionSignature = string(abi.encodePacked("randomFunctionAnother", i.toString(), "(uint256,string,address[])"));
+            bytes4 selector = bytes4(keccak256(bytes(functionSignature)));
+            defaultExtension5.functions.push(ExtensionFunction(
+                selector,
+                functionSignature
+            ));
+        }
 
         Extension[] memory defaultExtensions = new Extension[](2);
         defaultExtensions[0] = defaultExtension1;
@@ -137,6 +183,115 @@ contract BaseRouterTest is Test, IExtension {
 
         _validateExtensionDataOnContract(defaultExtension1);
         _validateExtensionDataOnContract(defaultExtension2);
+    }
+
+    /*///////////////////////////////////////////////////////////////
+                Deploy / Initialze BaseRouter & SSTORE2
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Check with a single extension with 10 functions
+    function test_state_deployBaseRouter() external {
+        Extension[] memory defaultExtensionsNew = new Extension[](1);
+        defaultExtensionsNew[0] = defaultExtension3;
+        CustomRouter routerNew = new CustomRouter(defaultExtensionsNew);
+
+        uint256 size;
+        address defaultExtensionsAddress = routerNew.defaultExtensions();
+
+        assembly {
+            size := extcodesize(defaultExtensionsAddress)
+        }
+
+        console.log(size);
+        // ensure size of default extension contract doesn't breach the limit
+        assertTrue(size < 24575);
+
+        bytes memory data = SSTORE2.read(defaultExtensionsAddress);
+        Extension[] memory defaults = abi.decode(data, (Extension[]));
+        assertEq(defaults.length, defaultExtensionsNew.length);
+        for(uint256 i = 0; i < defaults.length; i++) {
+            assertEq(defaults[i].functions.length, defaultExtensionsNew[i].functions.length);
+
+            for(uint256 j = 0; j < defaults[i].functions.length; j++) {
+                assertEq(defaults[i].functions[j].functionSelector, defaultExtensionsNew[i].functions[j].functionSelector);
+            }
+        }
+    }
+
+    /// @notice Check with multiple extensions extension with ~50 functions in total
+    function test_benchmark_deployBaseRouter_multipleExtensions() external {
+        Extension[] memory defaultExtensionsNew = new Extension[](3);
+        defaultExtensionsNew[0] = defaultExtension3;
+        defaultExtensionsNew[1] = defaultExtension4;
+        defaultExtensionsNew[2] = defaultExtension5;
+        CustomRouter routerNew = new CustomRouter(defaultExtensionsNew);
+
+        uint256 size;
+        address defaultExtensionsAddress = routerNew.defaultExtensions();
+
+        assembly {
+            size := extcodesize(defaultExtensionsAddress)
+        }
+
+        console.log(size);
+        // ensure size of default extension contract doesn't breach the limit
+        assertTrue(size < 24575);
+
+        bytes memory data = SSTORE2.read(defaultExtensionsAddress);
+        Extension[] memory defaults = abi.decode(data, (Extension[]));
+        assertEq(defaults.length, defaultExtensionsNew.length);
+        for(uint256 i = 0; i < defaults.length; i++) {
+            assertEq(defaults[i].functions.length, defaultExtensionsNew[i].functions.length);
+
+            for(uint256 j = 0; j < defaults[i].functions.length; j++) {
+                assertEq(defaults[i].functions[j].functionSelector, defaultExtensionsNew[i].functions[j].functionSelector);
+            }
+        }
+    }
+
+    /// @notice Check with a single extension with 10 functions
+    function test_benchmark_initializeBaseRouter_singleExtension() external {
+        // vm.pauseGasMetering();
+        Extension[] memory defaultExtensionsNew = new Extension[](1);
+        defaultExtensionsNew[0] = defaultExtension3;
+        CustomRouter routerNew = new CustomRouter(defaultExtensionsNew);
+        // vm.resumeGasMetering();
+
+        routerNew.initialize();
+
+        Extension[] memory defaultExtensionsAfterInit = routerNew.getAllExtensions();
+        assertEq(defaultExtensionsAfterInit.length, defaultExtensionsNew.length);
+        for(uint256 i = 0; i < defaultExtensionsAfterInit.length; i++) {
+            assertEq(defaultExtensionsAfterInit[i].functions.length, defaultExtensionsNew[i].functions.length);
+
+            for(uint256 j = 0; j < defaultExtensionsAfterInit[i].functions.length; j++) {
+                assertEq(defaultExtensionsAfterInit[i].functions[j].functionSelector, defaultExtensionsNew[i].functions[j].functionSelector);
+            }
+        }
+    }
+
+    /// @notice Check with multiple extensions extension with 50-100 functions in total
+    function test_benchmark_initializeBaseRouter_multipleExtensions() external {
+        // vm.pauseGasMetering();
+        Extension[] memory defaultExtensionsNew = new Extension[](3);
+        defaultExtensionsNew[0] = defaultExtension3;
+        defaultExtensionsNew[1] = defaultExtension4;
+        defaultExtensionsNew[2] = defaultExtension5;
+        
+        CustomRouter routerNew = new CustomRouter(defaultExtensionsNew);
+        // vm.resumeGasMetering();
+
+        routerNew.initialize();
+
+        Extension[] memory defaultExtensionsAfterInit = routerNew.getAllExtensions();
+        assertEq(defaultExtensionsAfterInit.length, defaultExtensionsNew.length);
+        for(uint256 i = 0; i < defaultExtensionsAfterInit.length; i++) {
+            assertEq(defaultExtensionsAfterInit[i].functions.length, defaultExtensionsNew[i].functions.length);
+
+            for(uint256 j = 0; j < defaultExtensionsAfterInit[i].functions.length; j++) {
+                assertEq(defaultExtensionsAfterInit[i].functions[j].functionSelector, defaultExtensionsNew[i].functions[j].functionSelector);
+            }
+        }
     }
 
     /*///////////////////////////////////////////////////////////////
