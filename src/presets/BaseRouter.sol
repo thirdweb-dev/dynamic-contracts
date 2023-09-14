@@ -52,10 +52,11 @@ abstract contract BaseRouter is Router, ExtensionManager {
 
             // 1. Store: metadata for extension.
             _setMetadataForExtension(extension.metadata.name, extension.metadata);
+
             uint256 len = extension.functions.length;
-            for (uint256 j = 0; j < len; j += 1) {
-                // 2. Store: function for extension.
-                _addToFunctionMap(extension.metadata.name, extension.functions[j]);
+            for (uint256 j = 0; j < len; j += 1) {                
+                // 2. Store: name -> extension.functions map
+                _extensionManagerStorage().extensions[extension.metadata.name].functions.push(extension.functions[j]);
                 // 3. Store: metadata for function.
                 _setMetadataForFunction(extension.functions[j].functionSelector, extension.metadata);
             }
