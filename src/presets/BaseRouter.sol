@@ -15,7 +15,10 @@ import "lib/sstore2/contracts/SSTORE2.sol";
 abstract contract BaseRouter is Router, ExtensionManager {
 
     using StringSet for StringSet.Set;
+
+    /// @dev Mapping used only for checking default extension validity in constructor.
     mapping(bytes4 => bool) functionMap;
+    /// @dev Mapping used only for checking default extension validity in constructor.
     mapping(string => bool) extensionMap;
 
     /// @notice The address where the router's default extension set is stored.
@@ -69,52 +72,55 @@ abstract contract BaseRouter is Router, ExtensionManager {
     /// @dev Validates default extensions.
     function _validateExtensions(Extension[] memory _extensions) internal {  
         uint256 len = _extensions.length;
-        for (uint256 i = 0; i < len; i += 1) {
-            // Check: extension namespace must not already exist.
-            // Check: provided extension namespace must not be empty.
-            // Check: provided extension implementation must be non-zero.
-            _checkExtensionValidity(_extensions[i]);
 
-            uint256 len = _extensions[i].functions.length;
-            for (uint256 j = 0; j < len; j += 1) {
-                _checkFunctionValidity(_extensions[i].functions[j]);
+        bool isValid = true;
+
+        for (uint256 i = 0; i < len; i += 1) {
+            isValid = _isValidExtension(_extensions[i]);
+            if(!isValid) {
+                break;
             }
         }
+        require(isValid, "BaseRouter: invalid extension.");
     }
 
-    /// @dev Checks whether a new extension can be added in the given execution context.
-    function _checkExtensionValidity(Extension memory _extension) internal virtual {
-        // Check: provided extension namespace must not be empty.
-        require(bytes(_extension.metadata.name).length > 0, "ExtensionManager: empty name.");
-
-        require(!extensionMap[_extension.metadata.name], "ExtensionManager: extension exists.");
+    function _isValidExtension(Extension memory _extension) internal returns (bool isValid) {
+        isValid  = bytes(_extension.metadata.name).length > 0 // non-empty name
+            && !extensionMap[_extension.metadata.name] // unused name
+            && _extension.metadata.implementation != address(0); // non-empty implementation
+        
         extensionMap[_extension.metadata.name] = true;
 
-        // Check: extension implementation must be non-zero.
-        require(_extension.metadata.implementation != address(0), "ExtensionManager: adding extension without implementation.");
-    }
-
-    /// @dev Validates a function in an Extension.
-    function _checkFunctionValidity(ExtensionFunction memory _extFunction) internal {
-        /**
-         *  Note: `bytes4(0)` is the function selector for the `receive` function.
-         *        So, we maintain a special fn selector-signature mismatch check for the `receive` function.
-        **/
-        bool mismatch = false;
-        if(_extFunction.functionSelector == bytes4(0)) {
-            mismatch = keccak256(abi.encode(_extFunction.functionSignature)) != keccak256(abi.encode("receive()"));
-        } else {
-            mismatch = _extFunction.functionSelector !=
-                bytes4(keccak256(abi.encodePacked(_extFunction.functionSignature)));
+        if(!isValid) {
+            return false;
         }
+        
+        uint256 len = _extension.functions.length;
+
+        for(uint256 i = 0; i < len; i += 1) {
+
+            if(!isValid) {
+                break;
+            }
+
+            ExtensionFunction memory _extFunction = _extension.functions[i];
+
+            /**
+            *  Note: `bytes4(0)` is the function selector for the `receive` function.
+            *        So, we maintain a special fn selector-signature mismatch check for the `receive` function.
+            **/
+            bool mismatch = false;
+            if(_extFunction.functionSelector == bytes4(0)) {
+                mismatch = keccak256(abi.encode(_extFunction.functionSignature)) != keccak256(abi.encode("receive()"));
+            } else {
+                mismatch = _extFunction.functionSelector !=
+                    bytes4(keccak256(abi.encodePacked(_extFunction.functionSignature)));
+            }
+
+            // No fn signature-selector mismatch and no duplicate function.
+            isValid = !mismatch && !functionMap[_extFunction.functionSelector];
             
-        // Check: function selector and signature must match.
-        require(
-            !mismatch,
-            "ExtensionManager: fn selector and signature mismatch."
-        );
-        // Check: function must not already be mapped to an implementation.
-        require(!functionMap[_extFunction.functionSelector], "ExtensionManager: function exists.");
-        functionMap[_extFunction.functionSelector] = true;
+            functionMap[_extFunction.functionSelector] = true;
+        }
     }
 }

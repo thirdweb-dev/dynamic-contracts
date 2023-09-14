@@ -249,6 +249,57 @@ contract BaseRouterTest is Test, IExtension {
         }
     }
 
+    /// @notice Two default extensions share the same name.
+    function test_revert_deployBaesRouter_nameAlreadyUsed() external {
+        Extension[] memory defaultExtensionsNew = new Extension[](2);
+        defaultExtensionsNew[0] = defaultExtension3;
+        defaultExtensionsNew[1] = defaultExtension3;
+        vm.expectRevert("BaseRouter: invalid extension.");
+        new CustomRouter(defaultExtensionsNew);
+    }
+
+    /// @notice The same function exists in two default extensions.
+    function test_revert_deployBaesRouter_fnAlreadyExists() external {
+        Extension[] memory defaultExtensionsNew = new Extension[](2);
+        defaultExtensionsNew[0] = defaultExtension3;
+        defaultExtensionsNew[1] = defaultExtension4;
+
+        defaultExtensionsNew[1].functions[0] = defaultExtension3.functions[0];
+
+        vm.expectRevert("BaseRouter: invalid extension.");
+        new CustomRouter(defaultExtensionsNew);
+    }
+
+    /// @notice Default extension has empty name.
+    function test_revert_deployBaesRouter_emptyName() external {
+        Extension[] memory defaultExtensionsNew = new Extension[](1);
+        defaultExtensionsNew[0] = defaultExtension3;
+        defaultExtensionsNew[0].metadata.name = "";
+
+        vm.expectRevert("BaseRouter: invalid extension.");
+        new CustomRouter(defaultExtensionsNew);
+    }
+
+    /// @notice Default extension has empty implementation address.
+    function test_revert_deployBaesRouter_emptyImplementation() external {
+        Extension[] memory defaultExtensionsNew = new Extension[](1);
+        defaultExtensionsNew[0] = defaultExtension3;
+        defaultExtensionsNew[0].metadata.implementation = address(0);
+
+        vm.expectRevert("BaseRouter: invalid extension.");
+        new CustomRouter(defaultExtensionsNew);
+    }
+
+    /// @notice Default extension has function selector signature mismatch.
+    function test_revert_deployBaesRouter_fnSelectorSignatureMismatch() external {
+        Extension[] memory defaultExtensionsNew = new Extension[](1);
+        defaultExtensionsNew[0] = defaultExtension3;
+        defaultExtensionsNew[0].functions[0].functionSignature = "whatever(uint256)";
+
+        vm.expectRevert("BaseRouter: invalid extension.");
+        new CustomRouter(defaultExtensionsNew);
+    }
+
     /// @notice Check with a single extension with 10 functions
     function test_state_initializeBaseRouter_singleExtension() external {
         // vm.pauseGasMetering();
