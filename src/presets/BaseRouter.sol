@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import { Router, IRouter } from "../core/Router.sol";
 import { IRouterState } from "../interface/IRouterState.sol";
 import { IRouterStateGetters } from "../interface/IRouterStateGetters.sol";
+import { BaseRouterStorage } from "../lib/BaseRouterStorage.sol";
 import { ExtensionManager } from "./ExtensionManager.sol";
 import { StringSet } from "../lib/StringSet.sol";
 import "lib/sstore2/contracts/SSTORE2.sol";
@@ -15,11 +16,6 @@ import "lib/sstore2/contracts/SSTORE2.sol";
 abstract contract BaseRouter is Router, ExtensionManager {
 
     using StringSet for StringSet.Set;
-
-    /// @dev Mapping used only for checking default extension validity in constructor.
-    mapping(bytes4 => bool) functionMap;
-    /// @dev Mapping used only for checking default extension validity in constructor.
-    mapping(string => bool) extensionMap;
 
     /// @notice The address where the router's default extension set is stored.
     address public immutable defaultExtensions;
@@ -44,9 +40,21 @@ abstract contract BaseRouter is Router, ExtensionManager {
         bytes memory data = SSTORE2.read(defaultExtensions);
         Extension[] memory defaults = abi.decode(data, (Extension[]));
 
-        for(uint256 i = 0; i < defaults.length; i += 1) {
+        // Unchecked since we already validated extensions in constructor.
+        __BaseRouter_init_unchecked(defaults);
+    }
 
-            Extension memory extension = defaults[i];
+    /// @notice Initializes the Router with a set of extensions.
+    function __BaseRouter_init_checked(Extension[] memory _extensions) internal {
+        _validateExtensions(_extensions);
+        __BaseRouter_init_unchecked(_extensions);
+    }
+
+    /// @notice Initializes the Router with a set of extensions.
+    function __BaseRouter_init_unchecked(Extension[] memory _extensions) internal {
+        for(uint256 i = 0; i < _extensions.length; i += 1) {
+
+            Extension memory extension = _extensions[i];
             // Store: new extension name.
             _extensionManagerStorage().extensionNames.add(extension.metadata.name);
 
@@ -87,10 +95,10 @@ abstract contract BaseRouter is Router, ExtensionManager {
 
     function _isValidExtension(Extension memory _extension) internal returns (bool isValid) {
         isValid  = bytes(_extension.metadata.name).length > 0 // non-empty name
-            && !extensionMap[_extension.metadata.name] // unused name
+            && !BaseRouterStorage.data().extensionMap[_extension.metadata.name] // unused name
             && _extension.metadata.implementation != address(0); // non-empty implementation
         
-        extensionMap[_extension.metadata.name] = true;
+        BaseRouterStorage.data().extensionMap[_extension.metadata.name] = true;
 
         if(!isValid) {
             return false;
@@ -119,9 +127,9 @@ abstract contract BaseRouter is Router, ExtensionManager {
             }
 
             // No fn signature-selector mismatch and no duplicate function.
-            isValid = !mismatch && !functionMap[_extFunction.functionSelector];
+            isValid = !mismatch && !BaseRouterStorage.data().functionMap[_extFunction.functionSelector];
             
-            functionMap[_extFunction.functionSelector] = true;
+            BaseRouterStorage.data().functionMap[_extFunction.functionSelector] = true;
         }
     }
 }
