@@ -20,7 +20,7 @@ abstract contract ExtensionManager is IExtensionManager, IRouterState, IRouterSt
 
     /// @notice Checks that a call to any external function is authorized.
     modifier onlyAuthorizedCall() {
-        require(isAuthorizedCallToUpgrade(), "ExtensionManager: unauthorized.");
+        require(_isAuthorizedCallToUpgrade(), "ExtensionManager: unauthorized.");
         _;
     }
 
@@ -350,5 +350,5 @@ abstract contract ExtensionManager is IExtensionManager, IRouterState, IRouterSt
     }
 
     /// @dev To override; returns whether all relevant permission and other checks are met before any upgrade.
-    function isAuthorizedCallToUpgrade() internal view virtual returns (bool);
+    function _isAuthorizedCallToUpgrade() internal view virtual returns (bool);
 }

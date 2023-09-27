@@ -26,7 +26,7 @@ contract RouterUpgradeable is BaseRouter {
     //////////////////////////////////////////////////////////////*/
 
     /// @dev Returns whether a function can be disabled in an extension in the given execution context.
-    function isAuthorizedCallToUpgrade() internal view virtual override returns (bool) {
+    function _isAuthorizedCallToUpgrade() internal view virtual override returns (bool) {
         return msg.sender == admin;
     }
 }

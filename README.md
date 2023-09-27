@@ -125,7 +125,7 @@ contract SimpleRouter is BaseRouter {
     }
 
     /// @dev Returns whether all relevant permission checks are met before any upgrade.
-    function isAuthorizedCallToUpgrade() internal view virtual override returns (bool) {
+    function _isAuthorizedCallToUpgrade() internal view virtual override returns (bool) {
         return msg.sender == deployer;
     }
 }
@@ -353,7 +353,7 @@ This contract is an abstract contract that expects you to override and implement
 
 - `isAuthorizedCallToUpgrade`
   ```solidity
-  function isAuthorizedCallToUpgrade() internal view virtual returns (bool);
+  function _isAuthorizedCallToUpgrade() internal view virtual returns (bool);
   ```
 
 ### onlyAuthorizedCall
@@ -662,7 +662,7 @@ function _extensionManagerStorage() internal pure returns (ExtensionManagerStora
 _To override; returns whether all relevant permission and other checks are met before any upgrade._
 
 ```solidity
-function isAuthorizedCallToUpgrade() internal view virtual returns (bool);
+function _isAuthorizedCallToUpgrade() internal view virtual returns (bool);
 ```
 
 ## BaseRouter
@@ -677,7 +677,7 @@ This contract is an abstract contract that expects you to override and implement
 
 - `isAuthorizedCallToUpgrade`
   ```solidity
-  function isAuthorizedCallToUpgrade() internal view virtual returns (bool);
+  function _isAuthorizedCallToUpgrade() internal view virtual returns (bool);
   ```
 
 ### getImplementationForFunction
