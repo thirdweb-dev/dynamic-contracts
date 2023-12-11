@@ -15,6 +15,8 @@ abstract contract Router is IRouter {
      *       incoming call's function selector.
 	 */
     fallback() external payable virtual {
+        if(msg.data.length == 0) return;
+        
         address implementation = getImplementationForFunction(msg.sig);
         require(implementation != address(0), "Router: function does not exist.");
         _delegate(implementation);
