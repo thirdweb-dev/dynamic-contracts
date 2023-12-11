@@ -22,5 +22,8 @@
   "dependencies": {},
   "scripts": {
     "gas": "forge test --mc Benchmark --gas-report > gasreport.txt"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
