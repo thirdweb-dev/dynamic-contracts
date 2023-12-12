@@ -186,6 +186,18 @@ contract BaseRouterTest is Test, IExtension {
     }
 
     /*///////////////////////////////////////////////////////////////
+                            Transfer method test
+    //////////////////////////////////////////////////////////////*/
+
+    function test_transferMethod() public {
+        uint256 amount = 1 ether;
+        
+        assertEq(address(router).balance, 0);
+        payable(address(router)).transfer(amount);
+        assertEq(address(router).balance, amount);
+    }
+
+    /*///////////////////////////////////////////////////////////////
                 Deploy / Initialze BaseRouter & SSTORE2
     //////////////////////////////////////////////////////////////*/
 
