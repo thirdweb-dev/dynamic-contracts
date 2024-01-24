@@ -206,7 +206,7 @@ Deploying a contract in the router pattern looks a little different from deployi
 1. Deploy all your `Extension` contracts first. You only need to do this once per `Extension`. Deployed `Extensions` can be re-used by many different `Router` contracts.
 
 2. Deploy your `Router` contract that implements `BaseRouter`.
-3. Add extensions to youe router via the API available in `BaseRouter`. (Alternatively, you can use `BaseRouterDefaults` which can be initialized with a set of extensions on deployment.)
+3. Add extensions to your router via the API available in `BaseRouter`. (Alternatively, you can use `BaseRouterDefaults` which can be initialized with a set of extensions on deployment.)
 
 ### `Extensions` - Grouping logical functionality together
 
