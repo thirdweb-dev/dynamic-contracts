@@ -143,7 +143,7 @@ The main decision as a `Router` contract author is to decide the permission mode
 
   This a is a preset that allows the contract owner to add / replace / remove extensions. The contract owner can be changed. This is a very basic permission model, but enough for some use cases. You can expand on this and use a permission based model instead for example.
 
-- [**RouterRegistryContrained**](https://github.com/thirdweb-dev/dynamic-contracts/blob/main/src/example/RouterRegistryConstrained.sol)
+- [**RouterRegistryConstrained**](https://github.com/thirdweb-dev/dynamic-contracts/blob/main/src/example/RouterRegistryConstrained.sol)
 
   This is a preset that allows the owner to change extensions if they are defined on a given registry contract. This is meant to demonstrate how a protocol ecosystem could constrain extensions to known, audited contracts, for instance. The registry and router upgrade models are of course too basic for production as written.
 
